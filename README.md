@@ -32,3 +32,5 @@ npm run preview
 - Scan history and webhook settings stay on-device in `localStorage`.
 - For GET webhooks, only headers are sent to avoid leaking data in query strings.
 - Ensure the browser is granted camera permissions when scanning.
+- Camera access requires a secure context (HTTPS or `localhost`). Opening the app over plain HTTP will block the camera in mobile
+  browsers; use `npm run dev -- --host` for LAN testing or deploy behind HTTPS.

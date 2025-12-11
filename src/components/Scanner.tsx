@@ -20,7 +20,12 @@ export function Scanner({ active, onScan, onError }: ScannerProps) {
       return () => controlsRef.current?.stop();
     }
 
-    if (!navigator.mediaDevices?.getUserMedia) {
+    if (!window.isSecureContext) {
+      setPermissionError('Camera access requires HTTPS (or localhost for dev).');
+      return undefined;
+    }
+
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
       setPermissionError('Camera access is not supported in this browser.');
       return undefined;
     }
