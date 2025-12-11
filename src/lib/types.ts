@@ -9,6 +9,7 @@ export interface WebhookConfig {
   url: string;
   method: HttpMethod;
   headers: WebhookHeader[];
+  pauseMs: number;
 }
 
 export type DeliveryStatus = 'pending' | 'sent' | 'failed';

@@ -5,8 +5,8 @@ This repository hosts a two-tab progressive web app (PWA) that scans barcodes/QR
 ## Features
 - ZXing-powered camera scanning with permission handling.
 - Daily history scoped to the current day (older entries are auto-pruned).
-- Configurable webhook (URL, verb, custom headers) stored locally; secure headers stay on-device except when calling your webhook.
-- Installable PWA with offline shell via service worker.
+- Configurable webhook (URL, verb, custom headers, scan pause) stored locally; secure headers stay on-device except when calling your webhook.
+- Mobile-first responsive layout tuned for phones, plus installable PWA with offline shell via service worker.
 
 ## Project structure
 - `src/App.tsx` – two-tab UI for scanning/history and settings.
@@ -31,6 +31,7 @@ npm run preview
 ### Notes
 - Scan history and webhook settings stay on-device in `localStorage`.
 - For GET webhooks, only headers are sent to avoid leaking data in query strings.
+- Add a pause (in milliseconds) between scans from **Settings** to prevent duplicate webhook bursts.
 - Ensure the browser is granted camera permissions when scanning.
 - Camera access requires a secure context (HTTPS or `localhost`). Opening the app over plain HTTP will block the camera in mobile
   browsers; use `npm run dev -- --host` for LAN testing or deploy behind HTTPS.

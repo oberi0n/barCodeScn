@@ -5,7 +5,7 @@ import { ScanRecord, WebhookConfig } from './lib/types';
 import { sendWebhook } from './lib/webhook';
 
 function createBlankConfig(): WebhookConfig {
-  return { url: '', method: 'POST', headers: [] };
+  return { url: '', method: 'POST', headers: [], pauseMs: 1200 };
 }
 
 const METHODS: WebhookConfig['method'][] = ['POST', 'PUT', 'PATCH', 'GET'];
@@ -46,6 +46,7 @@ export default function App() {
   const [config, setConfig] = usePersistentState<WebhookConfig>('webhook-config', createBlankConfig());
   const [scannerActive, setScannerActive] = useState(false);
   const [sending, setSending] = useState(false);
+  const [lastScanAt, setLastScanAt] = useState<number | null>(null);
   const todayHistory = useMemo(() => filterToday(history), [history]);
   const [lastError, setLastError] = useState<string | null>(null);
 
@@ -55,8 +56,23 @@ export default function App() {
     }
   }, [history.length, todayHistory.length, setHistory]);
 
+  useEffect(() => {
+    if (config.pauseMs === undefined || Number.isNaN(config.pauseMs)) {
+      setConfig((prev) => ({ ...prev, pauseMs: 1200 }));
+    }
+  }, [config.pauseMs, setConfig]);
+
   const handleScan = async (text: string, format: string) => {
     if (sending) return;
+
+    const now = Date.now();
+    if (lastScanAt && now - lastScanAt < Math.max(0, config.pauseMs)) {
+      const remaining = Math.max(0, config.pauseMs - (now - lastScanAt));
+      setLastError(`Please wait ${remaining} ms before scanning again.`);
+      return;
+    }
+
+    setLastScanAt(now);
 
     const record: ScanRecord = {
       id: crypto.randomUUID(),
@@ -225,6 +241,20 @@ export default function App() {
                 ))}
               </select>
               <p className="small-note">If using GET, only headers are sent to protect query strings.</p>
+            </div>
+
+            <div>
+              <label htmlFor="pause">Pause between scans (ms)</label>
+              <input
+                id="pause"
+                className="input"
+                type="number"
+                min={0}
+                step={100}
+                value={config.pauseMs}
+                onChange={(event) => updateConfig({ pauseMs: Math.max(0, Number(event.target.value)) })}
+              />
+              <p className="small-note">Throttle repeated reads to avoid spamming your webhook.</p>
             </div>
 
             <div className="stack">

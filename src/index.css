@@ -282,3 +282,82 @@ th {
   color: #1f2a44;
   font-weight: 600;
 }
+
+@media (max-width: 720px) {
+  #root {
+    max-width: 100%;
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.55rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  .tabs {
+    gap: 0.5rem;
+  }
+
+  .tab {
+    padding: 0.75rem;
+  }
+
+  .flex-between {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .flex-row {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .flex-row .button {
+    flex: 1;
+    min-width: 45%;
+    text-align: center;
+  }
+
+  .header-row {
+    grid-template-columns: 1fr;
+  }
+
+  th,
+  td {
+    font-size: 0.92rem;
+  }
+
+  .scanner-shell {
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 0;
+  }
+
+  #root {
+    padding: 0.85rem 0.85rem 1.4rem;
+  }
+
+  .brand-badge {
+    width: 28px;
+    height: 28px;
+  }
+
+  .button {
+    width: 100%;
+  }
+
+  .flex-row {
+    gap: 0.4rem;
+  }
+
+  .scanner-viewfinder {
+    aspect-ratio: 2 / 3;
+  }
+}
