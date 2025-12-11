@@ -49,6 +49,8 @@ export default function App() {
   const [lastScanAt, setLastScanAt] = useState<number | null>(null);
   const todayHistory = useMemo(() => filterToday(history), [history]);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (todayHistory.length !== history.length) {
@@ -124,6 +126,30 @@ export default function App() {
   const resetConfig = () => setConfig(createBlankConfig());
   const clearHistory = () => setHistory([]);
 
+  const runWebhookTest = async () => {
+    if (!config.url) {
+      setWebhookStatus('Configure the webhook URL first.');
+      return;
+    }
+
+    setTestingWebhook(true);
+    setWebhookStatus('Sending test payload…');
+
+    const now = new Date().toISOString();
+    const result = await sendWebhook(
+      { id: `test-${now}`, text: 'Test barcode', format: 'TEST', scannedAt: now },
+      config,
+    );
+
+    if (result.status === 'sent') {
+      setWebhookStatus(`Webhook responded with HTTP ${result.responseCode ?? '200-299'}.`);
+    } else {
+      setWebhookStatus(result.error ? `Webhook failed: ${result.error}` : 'Webhook failed to respond.');
+    }
+
+    setTestingWebhook(false);
+  };
+
   return (
     <div className={`stack app-shell ${scannerActive ? 'scan-mode' : ''}`}>
       <header className="hero">
@@ -144,7 +170,7 @@ export default function App() {
       </header>
 
       {activeTab === 'scan' ? (
-        <section className="card stack scan-card">
+        <section className={`card stack scan-card ${scannerActive ? 'scanning' : ''}`}>
           <div className="flex-between">
             <div className="stack">
               <h2 className="section-heading">
@@ -220,11 +246,11 @@ export default function App() {
             </button>
           </div>
 
-          <div className="stack">
-            <div>
-              <label htmlFor="url">Webhook URL</label>
-              <input
-                id="url"
+            <div className="stack">
+              <div>
+                <label htmlFor="url">Webhook URL</label>
+                <input
+                  id="url"
                 className="input"
                 value={config.url}
                 onChange={(event) => updateConfig({ url: event.target.value })}
@@ -289,7 +315,24 @@ export default function App() {
                     Remove
                   </button>
                 </div>
-              ))}
+                ))}
+              </div>
+
+            <div className="stack test-row">
+              <div className="flex-between">
+                <div>
+                  <h3>Webhook test</h3>
+                  <p className="small-note">Send a sample payload to confirm your endpoint receives scans.</p>
+                </div>
+                <button className="button" onClick={runWebhookTest} disabled={testingWebhook}>
+                  {testingWebhook ? 'Testing…' : 'Send test'}
+                </button>
+              </div>
+              {webhookStatus ? (
+                <p className="small-note" role="status">
+                  {webhookStatus}
+                </p>
+              ) : null}
             </div>
 
             <div className="stack">
