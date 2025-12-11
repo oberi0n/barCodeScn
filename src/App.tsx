@@ -53,7 +53,8 @@ export default function App() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
-  const APP_VERSION = '0.3.0';
+  const APP_VERSION = '0.3.1';
+  const scannerSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (todayHistory.length !== history.length) {
@@ -73,8 +74,12 @@ export default function App() {
   }, [scannerActive]);
 
   useEffect(() => {
-    if (scannerActive) {
-      window.scrollTo({ top: 0, behavior: 'auto' });
+    if (scannerActive && scannerSectionRef.current) {
+      const target = scannerSectionRef.current;
+      requestAnimationFrame(() => {
+        const top = target.getBoundingClientRect().top + window.scrollY - 10;
+        window.scrollTo({ top, behavior: 'smooth' });
+      });
     }
   }, [scannerActive]);
 
@@ -170,8 +175,7 @@ export default function App() {
           <span>labo.lu</span>
           <span className="version-chip">v{APP_VERSION}</span>
         </div>
-        <h1>Barcode console</h1>
-        <p className="small-note">A pared-back scanner with webhook delivery, tuned for the clean labo.lu aesthetic.</p>
+        <p className="small-note">Scanner minimaliste avec webhook sécurisé.</p>
         <div className="tabs">
           <button className={`tab ${activeTab === 'scan' ? 'active' : ''}`} onClick={() => setActiveTab('scan')}>
             Scan & history
@@ -183,7 +187,10 @@ export default function App() {
       </header>
 
       {activeTab === 'scan' ? (
-        <section className={`card stack scan-card ${scannerActive ? 'scanning' : ''}`}>
+        <section
+          className={`card stack scan-card ${scannerActive ? 'scanning' : ''}`}
+          ref={scannerSectionRef}
+        >
           <div className="flex-between">
             <div className="stack">
               <h2 className="section-heading">
@@ -192,6 +199,7 @@ export default function App() {
                 </span>
                 Scanner
               </h2>
+              <span className="small-note version-inline">v{APP_VERSION}</span>
               <p className="small-note">Camera decoding runs client-side. Pair it with secure webhook headers.</p>
             </div>
             <div className="flex-row">

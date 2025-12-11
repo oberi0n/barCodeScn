@@ -39,8 +39,12 @@ a {
 #root {
   max-width: 960px;
   margin: 0 auto;
-  padding: 1.75rem 1.25rem 2rem;
+  padding: 1.45rem 1.1rem 1.6rem;
   min-height: 100vh;
+}
+
+body.no-scroll #root {
+  padding: 1.15rem 0.9rem 1.3rem;
 }
 
 .app-shell {
@@ -57,7 +61,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.5rem;
 }
 
 .brand {
@@ -102,7 +106,7 @@ p {
   background: #ffffff;
   border: 1px solid #e6eaf5;
   border-radius: 18px;
-  padding: 1.25rem;
+  padding: 1.1rem;
   box-shadow: 0 14px 45px rgba(15, 23, 42, 0.06);
 }
 
@@ -245,7 +249,7 @@ th {
 .scan-card.scanning {
   flex: 1;
   min-height: 0;
-  max-height: calc(100vh - 180px);
+  max-height: calc(100vh - 140px);
 }
 
 .scan-card .table-container {
@@ -256,7 +260,7 @@ th {
 
 .scan-card.scanning .table-container {
   flex: 1;
-  max-height: min(260px, 38vh);
+  max-height: min(220px, 34vh);
   min-height: 0;
   overflow-y: auto;
 }
@@ -264,8 +268,8 @@ th {
 .scanner-shell {
   border: 1px dashed #d7dded;
   border-radius: 16px;
-  padding: 0.75rem;
-  margin-top: 1rem;
+  padding: 0.65rem;
+  margin-top: 0.55rem;
   background: linear-gradient(135deg, #f9fbff, #f5f7fc);
 }
 
@@ -279,7 +283,7 @@ th {
   border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 4 / 3;
-  height: clamp(190px, 40vh, 280px);
+  height: clamp(160px, 34vh, 230px);
 }
 
 .scanner-viewfinder video {
@@ -315,6 +319,11 @@ th {
 .small-note {
   color: #5b6473;
   font-size: 0.95rem;
+}
+
+.version-inline {
+  font-weight: 700;
+  color: #1f2a44;
 }
 
 .header-row {
@@ -366,7 +375,7 @@ th {
 }
 
 .app-shell.scan-mode .card {
-  padding: 1rem 1rem 0.9rem;
+  padding: 0.95rem;
 }
 
 .range-row {
@@ -396,7 +405,7 @@ th {
 @media (max-width: 720px) {
   #root {
     max-width: 100%;
-    padding: 1rem;
+    padding: 0.95rem 0.9rem 1.1rem;
   }
 
   h1 {
@@ -404,7 +413,7 @@ th {
   }
 
   .card {
-    padding: 1rem;
+    padding: 0.95rem;
   }
 
   .scan-card .table-container {
@@ -473,7 +482,7 @@ th {
 
   .scanner-viewfinder {
     aspect-ratio: 4 / 3;
-    height: clamp(180px, 42vh, 240px);
+    height: clamp(150px, 40vh, 205px);
   }
 
   .app-shell.scan-mode {
@@ -483,7 +492,7 @@ th {
 
   .app-shell.scan-mode .scan-card {
     grid-template-rows: auto auto 1fr;
-    max-height: calc(100vh - 140px);
+    max-height: calc(100vh - 120px);
   }
 
   .app-shell.scan-mode .table-container {

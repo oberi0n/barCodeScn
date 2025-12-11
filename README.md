@@ -1,6 +1,6 @@
 # Barcode Scanner (Web PWA)
 
-This repository hosts a two-tab progressive web app (PWA) that scans barcodes/QR codes, sends payloads to a secured webhook with optional headers, and keeps a same-day history. The UI follows the clean, light aesthetic of labo.lu. Current version: **0.3.0**.
+This repository hosts a two-tab progressive web app (PWA) that scans barcodes/QR codes, sends payloads to a secured webhook with optional headers, and keeps a same-day history. The UI follows the clean, light aesthetic of labo.lu. Current version: **0.3.1**.
 
 ## Features
 - ZXing-powered camera scanning with permission handling.
@@ -32,7 +32,7 @@ npm run preview
 - Scan history and webhook settings stay on-device in `localStorage`.
 - For GET webhooks, only headers are sent to avoid leaking data in query strings.
 - Add a pause (in milliseconds) between scans from **Settings** via the slider to prevent duplicate webhook bursts.
-- The scanning view locks to the viewport while active so camera, controls, and history stay visible on phones without page scrolling.
+- The scanning view locks to the viewport while active and auto-scrolls into place when starting the camera so controls and history stay visible on phones without page scrolling.
 - Ensure the browser is granted camera permissions when scanning.
 - Camera access requires a secure context (HTTPS or `localhost`). Opening the app over plain HTTP will block the camera in mobile
   browsers; use `npm run dev -- --host` for LAN testing or deploy behind HTTPS.

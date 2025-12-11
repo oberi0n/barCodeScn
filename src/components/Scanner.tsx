@@ -10,6 +10,8 @@ interface ScannerProps {
 export function Scanner({ active, onScan, onError }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
+  const lastResultRef = useRef<string | null>(null);
+  const lastResultAtRef = useRef<number>(0);
   const [permissionError, setPermissionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,7 +53,16 @@ export function Scanner({ active, onScan, onError }: ScannerProps) {
           }
 
           if (isMounted) {
-            onScan(result.getText(), result.getBarcodeFormat().toString());
+            const text = result.getText();
+            const now = Date.now();
+
+            if (lastResultRef.current === text && now - lastResultAtRef.current < 500) {
+              return;
+            }
+
+            lastResultRef.current = text;
+            lastResultAtRef.current = now;
+            onScan(text, result.getBarcodeFormat().toString());
           }
         },
       )
