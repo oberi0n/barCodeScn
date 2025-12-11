@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scanner } from './components/Scanner';
 import { usePersistentState } from './hooks/usePersistentState';
 import { ScanRecord, WebhookConfig } from './lib/types';
@@ -46,11 +46,14 @@ export default function App() {
   const [config, setConfig] = usePersistentState<WebhookConfig>('webhook-config', createBlankConfig());
   const [scannerActive, setScannerActive] = useState(false);
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const [lastScanAt, setLastScanAt] = useState<number | null>(null);
+  const lastScanAtRef = useRef<number | null>(null);
   const todayHistory = useMemo(() => filterToday(history), [history]);
   const [lastError, setLastError] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
+  const APP_VERSION = '0.3.0';
 
   useEffect(() => {
     if (todayHistory.length !== history.length) {
@@ -69,16 +72,23 @@ export default function App() {
     return () => document.body.classList.remove('no-scroll');
   }, [scannerActive]);
 
+  useEffect(() => {
+    if (scannerActive) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [scannerActive]);
+
   const handleScan = async (text: string, format: string) => {
-    if (sending) return;
+    if (sendingRef.current) return;
 
     const now = Date.now();
-    if (lastScanAt && now - lastScanAt < Math.max(0, config.pauseMs)) {
-      const remaining = Math.max(0, config.pauseMs - (now - lastScanAt));
+    if (lastScanAtRef.current && now - lastScanAtRef.current < Math.max(0, config.pauseMs)) {
+      const remaining = Math.max(0, config.pauseMs - (now - lastScanAtRef.current));
       setLastError(`Please wait ${remaining} ms before scanning again.`);
       return;
     }
 
+    lastScanAtRef.current = now;
     setLastScanAt(now);
 
     const record: ScanRecord = {
@@ -91,6 +101,7 @@ export default function App() {
 
     setHistory((prev) => pruneToToday([record, ...prev]));
     setSending(true);
+    sendingRef.current = true;
     setLastError(null);
 
     const result = await sendWebhook({ ...record }, config);
@@ -98,6 +109,7 @@ export default function App() {
       prev.map((item) => (item.id === record.id ? { ...item, status: result.status, responseCode: result.responseCode, error: result.error } : item)),
     );
     setSending(false);
+    sendingRef.current = false;
   };
 
   const updateConfig = (value: Partial<WebhookConfig>) => {
@@ -156,6 +168,7 @@ export default function App() {
         <div className="brand">
           <span className="brand-badge" aria-hidden />
           <span>labo.lu</span>
+          <span className="version-chip">v{APP_VERSION}</span>
         </div>
         <h1>Barcode console</h1>
         <p className="small-note">A pared-back scanner with webhook delivery, tuned for the clean labo.lu aesthetic.</p>
@@ -246,11 +259,11 @@ export default function App() {
             </button>
           </div>
 
-            <div className="stack">
-              <div>
-                <label htmlFor="url">Webhook URL</label>
-                <input
-                  id="url"
+          <div className="stack">
+            <div>
+              <label htmlFor="url">Webhook URL</label>
+              <input
+                id="url"
                 className="input"
                 value={config.url}
                 onChange={(event) => updateConfig({ url: event.target.value })}
@@ -275,16 +288,20 @@ export default function App() {
             </div>
 
             <div>
-              <label htmlFor="pause">Pause between scans (ms)</label>
-              <input
-                id="pause"
-                className="input"
-                type="number"
-                min={0}
-                step={100}
-                value={config.pauseMs}
-                onChange={(event) => updateConfig({ pauseMs: Math.max(0, Number(event.target.value)) })}
-              />
+              <label htmlFor="pause">Pause between scans</label>
+              <div className="range-row">
+                <input
+                  id="pause"
+                  className="input range"
+                  type="range"
+                  min={0}
+                  max={5000}
+                  step={50}
+                  value={config.pauseMs}
+                  onChange={(event) => updateConfig({ pauseMs: Math.max(0, Number(event.target.value)) })}
+                />
+                <span className="range-value">{config.pauseMs} ms</span>
+              </div>
               <p className="small-note">Throttle repeated reads to avoid spamming your webhook.</p>
             </div>
 
@@ -315,8 +332,8 @@ export default function App() {
                     Remove
                   </button>
                 </div>
-                ))}
-              </div>
+              ))}
+            </div>
 
             <div className="stack test-row">
               <div className="flex-between">
@@ -341,6 +358,7 @@ export default function App() {
                 All configuration and scan history stay on this device in local storage. Header values are never logged or
                 sent anywhere except your configured webhook.
               </p>
+              <p className="small-note">App version {APP_VERSION}.</p>
             </div>
           </div>
         </section>
