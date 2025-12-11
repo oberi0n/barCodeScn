@@ -19,6 +19,10 @@ body {
   color: #0f172a;
 }
 
+body.no-scroll {
+  overflow: hidden;
+}
+
 a {
   color: inherit;
 }
@@ -27,6 +31,15 @@ a {
   max-width: 960px;
   margin: 0 auto;
   padding: 1.75rem 1.25rem 2rem;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-shell.scan-mode {
+  min-height: 100vh;
+  gap: 0.75rem;
 }
 
 .hero {
@@ -201,6 +214,17 @@ th {
   overflow-x: auto;
 }
 
+.scan-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.scan-card .table-container {
+  margin-top: 0.35rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
 .scanner-shell {
   border: 1px dashed #d7dded;
   border-radius: 16px;
@@ -215,6 +239,7 @@ th {
   border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 3 / 4;
+  max-height: 55vh;
 }
 
 .scanner-viewfinder video {
@@ -283,6 +308,14 @@ th {
   font-weight: 600;
 }
 
+.app-shell.scan-mode .hero {
+  margin-bottom: 0.35rem;
+}
+
+.app-shell.scan-mode .scanner-shell {
+  margin-top: 0.5rem;
+}
+
 @media (max-width: 720px) {
   #root {
     max-width: 100%;
@@ -295,6 +328,10 @@ th {
 
   .card {
     padding: 1rem;
+  }
+
+  .scan-card .table-container {
+    max-height: 220px;
   }
 
   .tabs {
@@ -359,5 +396,18 @@ th {
 
   .scanner-viewfinder {
     aspect-ratio: 2 / 3;
+    max-height: 52vh;
+  }
+
+  .app-shell.scan-mode {
+    gap: 0.6rem;
+  }
+
+  .app-shell.scan-mode .scan-card {
+    flex: 1;
+  }
+
+  .app-shell.scan-mode .table-container {
+    max-height: 180px;
   }
 }

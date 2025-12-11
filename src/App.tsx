@@ -62,6 +62,11 @@ export default function App() {
     }
   }, [config.pauseMs, setConfig]);
 
+  useEffect(() => {
+    document.body.classList.toggle('no-scroll', scannerActive);
+    return () => document.body.classList.remove('no-scroll');
+  }, [scannerActive]);
+
   const handleScan = async (text: string, format: string) => {
     if (sending) return;
 
@@ -120,7 +125,7 @@ export default function App() {
   const clearHistory = () => setHistory([]);
 
   return (
-    <div className="stack">
+    <div className={`stack app-shell ${scannerActive ? 'scan-mode' : ''}`}>
       <header className="hero">
         <div className="brand">
           <span className="brand-badge" aria-hidden />
@@ -139,7 +144,7 @@ export default function App() {
       </header>
 
       {activeTab === 'scan' ? (
-        <section className="card stack">
+        <section className="card stack scan-card">
           <div className="flex-between">
             <div className="stack">
               <h2 className="section-heading">
