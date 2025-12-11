@@ -1,0 +1,9 @@
+{
+  "name": "Barcode Scanner PWA",
+  "short_name": "BarcodeScn",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "description": "Scan barcodes and send them to a secured webhook with daily history."
+}
