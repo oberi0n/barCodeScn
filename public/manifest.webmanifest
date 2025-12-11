@@ -3,7 +3,7 @@
   "short_name": "BarcodeScn",
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#0f172a",
-  "background_color": "#0f172a",
+  "theme_color": "#1834a8",
+  "background_color": "#f7f8fb",
   "description": "Scan barcodes and send them to a secured webhook with daily history."
 }

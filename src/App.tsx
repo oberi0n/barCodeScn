@@ -105,12 +105,16 @@ export default function App() {
 
   return (
     <div className="stack">
-      <header className="stack">
-        <h1>Barcode Scanner PWA</h1>
-        <p className="small-note">Scan with your camera, push to a secured webhook, and keep today\'s audit trail.</p>
+      <header className="hero">
+        <div className="brand">
+          <span className="brand-badge" aria-hidden />
+          <span>labo.lu</span>
+        </div>
+        <h1>Barcode console</h1>
+        <p className="small-note">A pared-back scanner with webhook delivery, tuned for the clean labo.lu aesthetic.</p>
         <div className="tabs">
           <button className={`tab ${activeTab === 'scan' ? 'active' : ''}`} onClick={() => setActiveTab('scan')}>
-            Scan & History
+            Scan & history
           </button>
           <button className={`tab ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
             Settings
@@ -121,13 +125,18 @@ export default function App() {
       {activeTab === 'scan' ? (
         <section className="card stack">
           <div className="flex-between">
-            <div>
-              <h2>Scanner</h2>
-              <p className="small-note">Camera barcode/QR scanning uses client-side decoding. Secrets stay in headers.</p>
+            <div className="stack">
+              <h2 className="section-heading">
+                <span className="pill" aria-hidden>
+                  ●
+                </span>
+                Scanner
+              </h2>
+              <p className="small-note">Camera decoding runs client-side. Pair it with secure webhook headers.</p>
             </div>
             <div className="flex-row">
               <button className="button secondary" onClick={clearHistory} disabled={!history.length}>
-                Clear history
+                Clear today
               </button>
               <button className="button" onClick={() => setScannerActive((prev) => !prev)}>
                 {scannerActive ? 'Stop camera' : 'Start scanning'}
@@ -179,7 +188,12 @@ export default function App() {
       ) : (
         <section className="card stack">
           <div className="flex-between">
-            <h2>Webhook Settings</h2>
+            <h2 className="section-heading">
+              <span className="pill" aria-hidden>
+                ●
+              </span>
+              Webhook settings
+            </h2>
             <button className="button secondary" onClick={resetConfig}>
               Reset
             </button>

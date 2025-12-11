@@ -1,9 +1,9 @@
 :root {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  line-height: 1.5;
+  line-height: 1.6;
   font-weight: 400;
-  color: #e2e8f0;
-  background-color: #0f172a;
+  color: #0f172a;
+  background-color: #f7f8fb;
 }
 
 * {
@@ -13,9 +13,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 40%),
-    radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.16), transparent 35%),
-    #0f172a;
+  background: radial-gradient(circle at 20% 20%, rgba(80, 121, 255, 0.08), transparent 30%),
+    radial-gradient(circle at 80% 10%, rgba(255, 195, 0, 0.08), transparent 28%),
+    #f7f8fb;
+  color: #0f172a;
 }
 
 a {
@@ -25,39 +26,73 @@ a {
 #root {
   max-width: 960px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1.75rem 1.25rem 2rem;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+}
+
+.brand-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(140deg, #192a56, #3d5af1);
+  box-shadow: 0 10px 25px rgba(61, 90, 241, 0.3);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: -0.02em;
+}
+
+p {
+  margin: 0;
 }
 
 .card {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 16px;
-  padding: 1rem;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.35);
+  background: #ffffff;
+  border: 1px solid #e6eaf5;
+  border-radius: 18px;
+  padding: 1.25rem;
+  box-shadow: 0 14px 45px rgba(15, 23, 42, 0.06);
 }
 
 .button {
-  background: linear-gradient(135deg, #38bdf8, #6366f1);
-  color: #0b1221;
-  padding: 0.75rem 1rem;
+  background: linear-gradient(120deg, #1834a8, #4d73ff);
+  color: #ffffff;
+  padding: 0.75rem 1.1rem;
   border: none;
   border-radius: 12px;
   font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
-  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 10px 24px rgba(24, 52, 168, 0.25);
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
 .button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(24, 52, 168, 0.28);
 }
 
 .button.secondary {
-  background: rgba(148, 163, 184, 0.2);
-  color: #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #d7dded;
   box-shadow: none;
 }
 
@@ -70,77 +105,96 @@ a {
 
 .input {
   width: 100%;
-  padding: 0.7rem 0.75rem;
+  padding: 0.75rem 0.85rem;
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(15, 23, 42, 0.5);
-  color: #e2e8f0;
+  border: 1px solid #d7dded;
+  background: #f9fbff;
+  color: #0f172a;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #4d73ff;
+  box-shadow: 0 0 0 3px rgba(77, 115, 255, 0.15);
 }
 
 label {
   display: block;
   font-weight: 600;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.3rem;
+  color: #1f2a44;
 }
 
 .tabs {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
 .tab {
   border-radius: 12px;
-  padding: 0.75rem;
+  padding: 0.9rem 0.75rem;
   text-align: center;
-  background: rgba(148, 163, 184, 0.1);
-  border: 1px solid transparent;
+  background: #ffffff;
+  border: 1px solid #d7dded;
   cursor: pointer;
+  font-weight: 700;
+  color: #1f2a44;
+  transition: border-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
 }
 
 .tab.active {
-  background: rgba(59, 130, 246, 0.18);
-  border-color: rgba(59, 130, 246, 0.45);
+  border-color: #4d73ff;
+  color: #1834a8;
+  box-shadow: 0 12px 30px rgba(24, 52, 168, 0.12);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
+  color: #1f2a44;
 }
 
 th,
 td {
   text-align: left;
-  padding: 0.6rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 0.65rem 0.4rem;
+  border-bottom: 1px solid #e6eaf5;
+  font-size: 0.95rem;
+}
+
+th {
+  color: #6b7487;
+  font-weight: 600;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.2rem 0.55rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
   font-size: 0.85rem;
-  font-weight: 600;
-  background: rgba(148, 163, 184, 0.15);
+  font-weight: 700;
+  background: #eef2ff;
 }
 
 .status-sent {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.14);
+  color: #1b8a3c;
+  background: #e6f6eb;
 }
 
 .status-failed {
-  color: #f43f5e;
-  background: rgba(244, 63, 94, 0.16);
+  color: #c11a36;
+  background: #fde9ef;
 }
 
 .status-pending {
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.18);
+  color: #b07907;
+  background: #fff3d6;
 }
 
 .table-container {
@@ -148,15 +202,16 @@ td {
 }
 
 .scanner-shell {
-  border: 1px dashed rgba(148, 163, 184, 0.5);
+  border: 1px dashed #d7dded;
   border-radius: 16px;
-  padding: 0.5rem;
+  padding: 0.75rem;
   margin-top: 1rem;
+  background: linear-gradient(135deg, #f9fbff, #f5f7fc);
 }
 
 .scanner-viewfinder {
   position: relative;
-  background: rgba(15, 23, 42, 0.4);
+  background: #0f172a;
   border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 3 / 4;
@@ -166,14 +221,16 @@ td {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0.9;
 }
 
 .scanner-overlay {
   position: absolute;
-  inset: 0;
-  border: 2px solid rgba(52, 211, 153, 0.7);
-  border-radius: 12px;
+  inset: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
   pointer-events: none;
+  box-shadow: 0 0 0 3px rgba(77, 115, 255, 0.55);
 }
 
 .flex-between {
@@ -191,8 +248,8 @@ td {
 }
 
 .small-note {
-  color: #cbd5e1;
-  font-size: 0.9rem;
+  color: #5b6473;
+  font-size: 0.95rem;
 }
 
 .header-row {
@@ -204,5 +261,24 @@ td {
 
 .stack {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.9rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: #f0f3ff;
+  color: #1f2a44;
+  font-weight: 600;
 }
