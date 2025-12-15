@@ -190,6 +190,13 @@ export default function App() {
 
   const closeClearModal = () => setShowClearConfirm(false);
 
+  const confirmReset = () => {
+    setConfig(createBlankConfig());
+    setShowResetConfirm(false);
+  };
+
+  const closeResetModal = () => setShowResetConfirm(false);
+
   const runWebhookTest = async () => {
     if (!config.url) {
       setWebhookStatus(t.settings.testMissingUrl);
