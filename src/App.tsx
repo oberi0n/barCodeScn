@@ -176,26 +176,19 @@ export default function App() {
   };
   const clearHistory = () => setShowClearConfirm(true);
 
-  const confirmReset = () => {
+  const handleConfirmReset = () => {
     setConfig(createBlankConfig());
     setShowResetConfirm(false);
   };
 
-  const closeResetModal = () => setShowResetConfirm(false);
+  const handleCloseResetModal = () => setShowResetConfirm(false);
 
-  const confirmClearHistory = () => {
+  const handleConfirmClearHistory = () => {
     setHistory([]);
     setShowClearConfirm(false);
   };
 
-  const closeClearModal = () => setShowClearConfirm(false);
-
-  const confirmReset = () => {
-    setConfig(createBlankConfig());
-    setShowResetConfirm(false);
-  };
-
-  const closeResetModal = () => setShowResetConfirm(false);
+  const handleCloseClearModal = () => setShowClearConfirm(false);
 
   const runWebhookTest = async () => {
     if (!config.url) {
@@ -454,10 +447,10 @@ export default function App() {
               <p className="small-note modal-copy">{t.settings.resetConfirm}</p>
             </div>
             <div className="modal-actions">
-              <button className="button secondary full-width" onClick={closeResetModal}>
+              <button className="button secondary full-width" onClick={handleCloseResetModal}>
                 {t.settings.resetCancel}
               </button>
-              <button className="button danger full-width" onClick={confirmReset}>
+              <button className="button danger full-width" onClick={handleConfirmReset}>
                 {t.settings.resetConfirmAction}
               </button>
             </div>
@@ -475,10 +468,10 @@ export default function App() {
               <p className="small-note modal-copy">{t.scanner.clearConfirm}</p>
             </div>
             <div className="modal-actions">
-              <button className="button secondary full-width" onClick={closeClearModal}>
+              <button className="button secondary full-width" onClick={handleCloseClearModal}>
                 {t.scanner.clearCancel}
               </button>
-              <button className="button danger full-width" onClick={confirmClearHistory}>
+              <button className="button danger full-width" onClick={handleConfirmClearHistory}>
                 {t.scanner.clearConfirmAction}
               </button>
             </div>
