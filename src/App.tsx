@@ -171,11 +171,10 @@ export default function App() {
     <div className={`stack app-shell ${scannerActive ? 'scan-mode' : ''}`}>
       <header className="hero">
         <div className="brand">
-          <img className="brand-logo" src="/logo.svg" alt="labo.lu logo" />
-          <span>labo.lu</span>
+          <img className="brand-logo" src="/logo.png" alt="labo.lu logo" />
+          
           <span className="version-chip">v{APP_VERSION}</span>
         </div>
-        <p className="small-note">Scanner minimaliste avec webhook sécurisé.</p>
         <div className="tabs">
           <button className={`tab ${activeTab === 'scan' ? 'active' : ''}`} onClick={() => setActiveTab('scan')}>
             Scan & history
@@ -199,8 +198,6 @@ export default function App() {
                 </span>
                 Scanner
               </h2>
-              <span className="small-note version-inline">v{APP_VERSION}</span>
-              <p className="small-note">Camera decoding runs client-side. Pair it with secure webhook headers.</p>
             </div>
             <div className="flex-row">
               <button className="button secondary" onClick={clearHistory} disabled={!history.length}>
