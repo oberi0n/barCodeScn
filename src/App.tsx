@@ -56,6 +56,7 @@ export default function App() {
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const APP_VERSION = '0.3.1';
   const scannerSectionRef = useRef<HTMLElement | null>(null);
   const t = useMemo(() => getTranslations(language), [language]);
@@ -94,9 +95,10 @@ export default function App() {
   }, [scannerActive]);
 
   useEffect(() => {
-    document.body.classList.toggle('modal-open', showResetConfirm);
+    const modalOpen = showResetConfirm || showClearConfirm;
+    document.body.classList.toggle('modal-open', modalOpen);
     return () => document.body.classList.remove('modal-open');
-  }, [showResetConfirm]);
+  }, [showResetConfirm, showClearConfirm]);
 
   useEffect(() => {
     if (scannerActive && scannerSectionRef.current) {
@@ -172,7 +174,21 @@ export default function App() {
   const resetConfig = () => {
     setShowResetConfirm(true);
   };
-  const clearHistory = () => setHistory([]);
+  const clearHistory = () => setShowClearConfirm(true);
+
+  const confirmReset = () => {
+    setConfig(createBlankConfig());
+    setShowResetConfirm(false);
+  };
+
+  const closeResetModal = () => setShowResetConfirm(false);
+
+  const confirmClearHistory = () => {
+    setHistory([]);
+    setShowClearConfirm(false);
+  };
+
+  const closeClearModal = () => setShowClearConfirm(false);
 
   const confirmReset = () => {
     setConfig(createBlankConfig());
@@ -443,6 +459,27 @@ export default function App() {
               </button>
               <button className="button danger full-width" onClick={confirmReset}>
                 {t.settings.resetConfirmAction}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showClearConfirm ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="clear-modal-title">
+          <div className="modal-sheet">
+            <div className="sheet-handle" aria-hidden />
+            <div className="stack modal-body">
+              <p className="eyebrow">{t.scanner.clearConfirmTitle}</p>
+              <h3 id="clear-modal-title">{t.scanner.clearToday}</h3>
+              <p className="small-note modal-copy">{t.scanner.clearConfirm}</p>
+            </div>
+            <div className="modal-actions">
+              <button className="button secondary full-width" onClick={closeClearModal}>
+                {t.scanner.clearCancel}
+              </button>
+              <button className="button danger full-width" onClick={confirmClearHistory}>
+                {t.scanner.clearConfirmAction}
               </button>
             </div>
           </div>

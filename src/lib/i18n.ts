@@ -29,6 +29,10 @@ export interface Translations {
     };
     empty: string;
     waitMessage: (ms: number) => string;
+    clearConfirmTitle: string;
+    clearConfirm: string;
+    clearConfirmAction: string;
+    clearCancel: string;
     cameraErrors: {
       insecure: string;
       unsupported: string;
@@ -83,6 +87,10 @@ const translations: Record<Language, Translations> = {
       statuses: { sent: 'Sent', pending: 'Pending', failed: 'Failed' },
       empty: 'No scans yet today.',
       waitMessage: (ms) => `Please wait ${ms} ms before scanning again.`,
+      clearConfirmTitle: 'Confirm clear',
+      clearConfirm: 'Clear today\'s scans? This only removes local history.',
+      clearConfirmAction: 'Clear today',
+      clearCancel: 'Keep scans',
       cameraErrors: {
         insecure: 'Camera access requires HTTPS (or localhost for dev).',
         unsupported: 'Camera access is not supported in this browser.',
@@ -136,6 +144,10 @@ const translations: Record<Language, Translations> = {
       statuses: { sent: 'Envoyé', pending: 'En attente', failed: 'Échec' },
       empty: "Aucun scan aujourd'hui.",
       waitMessage: (ms) => `Merci de patienter ${ms} ms avant de scanner à nouveau.`,
+      clearConfirmTitle: 'Confirmer la suppression',
+      clearConfirm: 'Effacer les scans du jour ? Cela supprime uniquement l\'historique local.',
+      clearConfirmAction: 'Effacer la journée',
+      clearCancel: 'Conserver les scans',
       cameraErrors: {
         insecure: "L'accès à la caméra nécessite HTTPS (ou localhost en dev).",
         unsupported: "L'accès à la caméra n'est pas supporté dans ce navigateur.",
@@ -190,6 +202,10 @@ const translations: Record<Language, Translations> = {
       statuses: { sent: 'Gesendet', pending: 'Ausstehend', failed: 'Fehlgeschlagen' },
       empty: 'Heute noch keine Scans.',
       waitMessage: (ms) => `Bitte ${ms} ms warten, bevor erneut gescannt wird.`,
+      clearConfirmTitle: 'Löschen bestätigen',
+      clearConfirm: 'Heutige Scans löschen? Dies entfernt nur den lokalen Verlauf.',
+      clearConfirmAction: 'Heute löschen',
+      clearCancel: 'Scans behalten',
       cameraErrors: {
         insecure: 'Kamerazugriff erfordert HTTPS (oder localhost in der Entwicklung).',
         unsupported: 'Kamerazugriff wird in diesem Browser nicht unterstützt.',
