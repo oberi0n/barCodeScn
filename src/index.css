@@ -19,9 +19,7 @@ body,
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at 20% 20%, rgba(80, 121, 255, 0.08), transparent 30%),
-    radial-gradient(circle at 80% 10%, rgba(255, 195, 0, 0.08), transparent 28%),
-    #f7f8fb;
+  background: #f7f8fb;
   color: #0f172a;
 }
 
@@ -84,7 +82,7 @@ body.no-scroll #root {
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  background: linear-gradient(140deg, #192a56, #3d5af1);
+  background: #1834a8;
   box-shadow: 0 10px 25px rgba(61, 90, 241, 0.3);
 }
 
@@ -118,7 +116,7 @@ p {
 }
 
 .button {
-  background: linear-gradient(120deg, #1834a8, #4d73ff);
+  background: #1834a8;
   color: #ffffff;
   padding: 0.75rem 1.1rem;
   border: none;
@@ -132,6 +130,7 @@ p {
 
 .button:hover {
   transform: translateY(-1px);
+  background: #1f46d2;
   box-shadow: 0 12px 28px rgba(24, 52, 168, 0.28);
 }
 
@@ -277,7 +276,7 @@ th {
   border-radius: 16px;
   padding: 0.65rem;
   margin-top: 0.55rem;
-  background: linear-gradient(135deg, #f9fbff, #f5f7fc);
+  background: #f5f7fc;
 }
 
 .scan-card.scanning .scanner-shell {
