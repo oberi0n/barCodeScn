@@ -163,7 +163,12 @@ export default function App() {
     });
   };
 
-  const resetConfig = () => setConfig(createBlankConfig());
+  const resetConfig = () => {
+    const confirmed = window.confirm(t.settings.resetConfirm);
+    if (confirmed) {
+      setConfig(createBlankConfig());
+    }
+  };
   const clearHistory = () => setHistory([]);
 
   const runWebhookTest = async () => {

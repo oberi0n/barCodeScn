@@ -88,6 +88,7 @@ const translations: Record<Language, Translations> = {
     settings: {
       title: 'Webhook settings',
       reset: 'Reset',
+      resetConfirm: 'Reset webhook settings to defaults?',
       urlLabel: 'Webhook URL',
       urlPlaceholder: 'https://example.com/webhook',
       methodLabel: 'HTTP verb',
@@ -137,6 +138,7 @@ const translations: Record<Language, Translations> = {
     settings: {
       title: 'Paramètres webhook',
       reset: 'Réinitialiser',
+      resetConfirm: 'Réinitialiser les paramètres webhook ?',
       urlLabel: 'URL du webhook',
       urlPlaceholder: 'https://exemple.com/webhook',
       methodLabel: 'Verbe HTTP',
@@ -187,6 +189,7 @@ const translations: Record<Language, Translations> = {
     settings: {
       title: 'Webhook-Einstellungen',
       reset: 'Zurücksetzen',
+      resetConfirm: 'Webhook-Einstellungen auf Standard zurücksetzen?',
       urlLabel: 'Webhook-URL',
       urlPlaceholder: 'https://beispiel.de/webhook',
       methodLabel: 'HTTP-Verb',
