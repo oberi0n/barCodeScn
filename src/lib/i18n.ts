@@ -38,7 +38,6 @@ export interface Translations {
   settings: {
     title: string;
     reset: string;
-    resetConfirm: string;
     urlLabel: string;
     urlPlaceholder: string;
     methodLabel: string;
