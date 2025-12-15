@@ -1,0 +1,13 @@
+<svg width="140" height="140" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Barcode Scanner Logo</title>
+  <desc id="desc">Rounded squares framing a stylized barcode with a blue accent.</desc>
+  <rect x="10" y="10" width="120" height="120" rx="18" fill="#0F172A"/>
+  <rect x="24" y="24" width="92" height="92" rx="14" fill="#111827" stroke="#38BDF8" stroke-width="6"/>
+  <g transform="translate(38 40)" fill="#E5E7EB">
+    <rect x="0" y="0" width="6" height="60" rx="2"/>
+    <rect x="16" y="4" width="8" height="52" rx="2"/>
+    <rect x="34" y="0" width="6" height="60" rx="2"/>
+    <rect x="48" y="8" width="6" height="44" rx="2"/>
+    <rect x="62" y="0" width="10" height="60" rx="2" fill="#38BDF8"/>
+  </g>
+</svg>
