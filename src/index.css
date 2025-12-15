@@ -73,6 +73,13 @@ body.no-scroll #root {
   color: #0f172a;
 }
 
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  box-shadow: 0 12px 26px rgba(24, 52, 168, 0.3);
+}
+
 .brand-badge {
   width: 32px;
   height: 32px;
@@ -467,6 +474,7 @@ th {
     padding: 0.85rem 0.85rem 1.4rem;
   }
 
+  .brand-logo,
   .brand-badge {
     width: 28px;
     height: 28px;

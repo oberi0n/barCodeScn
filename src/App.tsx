@@ -171,7 +171,7 @@ export default function App() {
     <div className={`stack app-shell ${scannerActive ? 'scan-mode' : ''}`}>
       <header className="hero">
         <div className="brand">
-          <span className="brand-badge" aria-hidden />
+          <img className="brand-logo" src="/logo.svg" alt="labo.lu logo" />
           <span>labo.lu</span>
           <span className="version-chip">v{APP_VERSION}</span>
         </div>
