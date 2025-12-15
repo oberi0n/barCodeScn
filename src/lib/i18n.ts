@@ -38,6 +38,10 @@ export interface Translations {
   settings: {
     title: string;
     reset: string;
+    resetConfirm: string;
+    resetConfirmTitle: string;
+    resetConfirmAction: string;
+    resetCancel: string;
     urlLabel: string;
     urlPlaceholder: string;
     methodLabel: string;
@@ -88,7 +92,10 @@ const translations: Record<Language, Translations> = {
     settings: {
       title: 'Webhook settings',
       reset: 'Reset',
+      resetConfirmTitle: 'Confirm reset',
       resetConfirm: 'Reset webhook settings to defaults?',
+      resetConfirmAction: 'Reset now',
+      resetCancel: 'Keep my settings',
       urlLabel: 'Webhook URL',
       urlPlaceholder: 'https://example.com/webhook',
       methodLabel: 'HTTP verb',
@@ -138,7 +145,10 @@ const translations: Record<Language, Translations> = {
     settings: {
       title: 'Paramètres webhook',
       reset: 'Réinitialiser',
+      resetConfirmTitle: 'Confirmer la réinitialisation',
       resetConfirm: 'Réinitialiser les paramètres webhook ?',
+      resetConfirmAction: 'Réinitialiser maintenant',
+      resetCancel: 'Conserver mes réglages',
       urlLabel: 'URL du webhook',
       urlPlaceholder: 'https://exemple.com/webhook',
       methodLabel: 'Verbe HTTP',
@@ -189,7 +199,10 @@ const translations: Record<Language, Translations> = {
     settings: {
       title: 'Webhook-Einstellungen',
       reset: 'Zurücksetzen',
+      resetConfirmTitle: 'Zurücksetzen bestätigen',
       resetConfirm: 'Webhook-Einstellungen auf Standard zurücksetzen?',
+      resetConfirmAction: 'Jetzt zurücksetzen',
+      resetCancel: 'Einstellungen behalten',
       urlLabel: 'Webhook-URL',
       urlPlaceholder: 'https://beispiel.de/webhook',
       methodLabel: 'HTTP-Verb',

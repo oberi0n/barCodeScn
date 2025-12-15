@@ -55,6 +55,7 @@ export default function App() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const APP_VERSION = '0.3.1';
   const scannerSectionRef = useRef<HTMLElement | null>(null);
   const t = useMemo(() => getTranslations(language), [language]);
@@ -91,6 +92,11 @@ export default function App() {
     document.body.classList.toggle('no-scroll', scannerActive);
     return () => document.body.classList.remove('no-scroll');
   }, [scannerActive]);
+
+  useEffect(() => {
+    document.body.classList.toggle('modal-open', showResetConfirm);
+    return () => document.body.classList.remove('modal-open');
+  }, [showResetConfirm]);
 
   useEffect(() => {
     if (scannerActive && scannerSectionRef.current) {
@@ -164,12 +170,16 @@ export default function App() {
   };
 
   const resetConfig = () => {
-    const confirmed = window.confirm(t.settings.resetConfirm);
-    if (confirmed) {
-      setConfig(createBlankConfig());
-    }
+    setShowResetConfirm(true);
   };
   const clearHistory = () => setHistory([]);
+
+  const confirmReset = () => {
+    setConfig(createBlankConfig());
+    setShowResetConfirm(false);
+  };
+
+  const closeResetModal = () => setShowResetConfirm(false);
 
   const runWebhookTest = async () => {
     if (!config.url) {
@@ -417,6 +427,27 @@ export default function App() {
           </div>
         </section>
       )}
+
+      {showResetConfirm ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+          <div className="modal-sheet">
+            <div className="sheet-handle" aria-hidden />
+            <div className="stack modal-body">
+              <p className="eyebrow">{t.settings.resetConfirmTitle}</p>
+              <h3 id="reset-modal-title">{t.settings.reset}</h3>
+              <p className="small-note modal-copy">{t.settings.resetConfirm}</p>
+            </div>
+            <div className="modal-actions">
+              <button className="button secondary full-width" onClick={closeResetModal}>
+                {t.settings.resetCancel}
+              </button>
+              <button className="button danger full-width" onClick={confirmReset}>
+                {t.settings.resetConfirmAction}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
