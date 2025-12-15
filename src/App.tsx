@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scanner } from './components/Scanner';
 import { usePersistentState } from './hooks/usePersistentState';
+import { AVAILABLE_LANGUAGES, Language, getTranslations } from './lib/i18n';
 import { ScanRecord, WebhookConfig } from './lib/types';
 import { sendWebhook } from './lib/webhook';
 
@@ -44,6 +45,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'scan' | 'settings'>('scan');
   const [history, setHistory] = usePersistentState<ScanRecord[]>('history', []);
   const [config, setConfig] = usePersistentState<WebhookConfig>('webhook-config', createBlankConfig());
+  const [language, setLanguage] = usePersistentState<Language>('language', 'en');
   const [scannerActive, setScannerActive] = useState(false);
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
@@ -53,8 +55,10 @@ export default function App() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const APP_VERSION = '0.3.1';
   const scannerSectionRef = useRef<HTMLElement | null>(null);
+  const t = useMemo(() => getTranslations(language), [language]);
 
   useEffect(() => {
     if (todayHistory.length !== history.length) {
@@ -63,15 +67,36 @@ export default function App() {
   }, [history.length, todayHistory.length, setHistory]);
 
   useEffect(() => {
-    if (config.pauseMs === undefined || Number.isNaN(config.pauseMs)) {
-      setConfig((prev) => ({ ...prev, pauseMs: 1200 }));
-    }
-  }, [config.pauseMs, setConfig]);
+    setConfig((prev) => {
+      const normalized: WebhookConfig = {
+        url: prev?.url ?? '',
+        method: prev?.method ?? 'POST',
+        headers: Array.isArray(prev?.headers) ? prev.headers : [],
+        pauseMs:
+          prev?.pauseMs === undefined || Number.isNaN(prev.pauseMs) || prev.pauseMs < 0
+            ? 1200
+            : prev.pauseMs,
+      };
+
+      const unchanged =
+        normalized.url === prev?.url &&
+        normalized.method === prev?.method &&
+        normalized.pauseMs === prev?.pauseMs &&
+        normalized.headers === prev?.headers;
+
+      return unchanged ? prev : normalized;
+    });
+  }, [setConfig]);
 
   useEffect(() => {
     document.body.classList.toggle('no-scroll', scannerActive);
     return () => document.body.classList.remove('no-scroll');
   }, [scannerActive]);
+
+  useEffect(() => {
+    document.body.classList.toggle('modal-open', showResetConfirm);
+    return () => document.body.classList.remove('modal-open');
+  }, [showResetConfirm]);
 
   useEffect(() => {
     if (scannerActive && scannerSectionRef.current) {
@@ -89,7 +114,7 @@ export default function App() {
     const now = Date.now();
     if (lastScanAtRef.current && now - lastScanAtRef.current < Math.max(0, config.pauseMs)) {
       const remaining = Math.max(0, config.pauseMs - (now - lastScanAtRef.current));
-      setLastError(`Please wait ${remaining} ms before scanning again.`);
+      setLastError(t.scanner.waitMessage(remaining));
       return;
     }
 
@@ -111,7 +136,11 @@ export default function App() {
 
     const result = await sendWebhook({ ...record }, config);
     setHistory((prev) =>
-      prev.map((item) => (item.id === record.id ? { ...item, status: result.status, responseCode: result.responseCode, error: result.error } : item)),
+      prev.map((item) =>
+        item.id === record.id
+          ? { ...item, status: result.status, responseCode: result.responseCode, error: result.error }
+          : item,
+      ),
     );
     setSending(false);
     sendingRef.current = false;
@@ -140,17 +169,26 @@ export default function App() {
     });
   };
 
-  const resetConfig = () => setConfig(createBlankConfig());
+  const resetConfig = () => {
+    setShowResetConfirm(true);
+  };
   const clearHistory = () => setHistory([]);
+
+  const confirmReset = () => {
+    setConfig(createBlankConfig());
+    setShowResetConfirm(false);
+  };
+
+  const closeResetModal = () => setShowResetConfirm(false);
 
   const runWebhookTest = async () => {
     if (!config.url) {
-      setWebhookStatus('Configure the webhook URL first.');
+      setWebhookStatus(t.settings.testMissingUrl);
       return;
     }
 
     setTestingWebhook(true);
-    setWebhookStatus('Sending test payload…');
+    setWebhookStatus(t.settings.testSendingStatus);
 
     const now = new Date().toISOString();
     const result = await sendWebhook(
@@ -159,9 +197,9 @@ export default function App() {
     );
 
     if (result.status === 'sent') {
-      setWebhookStatus(`Webhook responded with HTTP ${result.responseCode ?? '200-299'}.`);
+      setWebhookStatus(t.settings.testSuccess(result.responseCode));
     } else {
-      setWebhookStatus(result.error ? `Webhook failed: ${result.error}` : 'Webhook failed to respond.');
+      setWebhookStatus(result.error ? t.settings.testFailed(result.error) : t.settings.testNoResponse);
     }
 
     setTestingWebhook(false);
@@ -177,10 +215,10 @@ export default function App() {
         </div>
         <div className="tabs">
           <button className={`tab ${activeTab === 'scan' ? 'active' : ''}`} onClick={() => setActiveTab('scan')}>
-            Scan & history
+            {t.tabs.scan}
           </button>
           <button className={`tab ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
-            Settings
+            {t.tabs.settings}
           </button>
         </div>
       </header>
@@ -196,37 +234,44 @@ export default function App() {
                 <span className="pill" aria-hidden>
                   ●
                 </span>
-                Scanner
+                {t.scanner.title}
               </h2>
             </div>
             <div className="flex-row">
               <button className="button secondary" onClick={clearHistory} disabled={!history.length}>
-                Clear today
+                {t.scanner.clearToday}
               </button>
               <button className="button" onClick={() => setScannerActive((prev) => !prev)}>
-                {scannerActive ? 'Stop camera' : 'Start scanning'}
+                {scannerActive ? t.scanner.stop : t.scanner.start}
               </button>
             </div>
           </div>
 
-          {scannerActive ? <Scanner active={scannerActive} onScan={handleScan} onError={setLastError} /> : null}
+          {scannerActive ? (
+            <Scanner
+              active={scannerActive}
+              onScan={handleScan}
+              onError={setLastError}
+              messages={t.scanner.cameraErrors}
+            />
+          ) : null}
           {lastError ? <p className="small-note">{lastError}</p> : null}
 
           <div className="table-container">
             <table>
               <thead>
                 <tr>
-                  <th>Value</th>
-                  <th>Format</th>
-                  <th>Time</th>
-                  <th>Status</th>
+                  <th>{t.scanner.table.value}</th>
+                  <th>{t.scanner.table.format}</th>
+                  <th>{t.scanner.table.time}</th>
+                  <th>{t.scanner.table.status}</th>
                 </tr>
               </thead>
               <tbody>
                 {todayHistory.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="small-note">
-                      No scans yet today.
+                      {t.scanner.empty}
                     </td>
                   </tr>
                 ) : (
@@ -237,9 +282,9 @@ export default function App() {
                       <td title={formatDate(item.scannedAt)}>{formatTime(item.scannedAt)}</td>
                       <td>
                         <span className={`badge status-${item.status}`} title={item.error ?? undefined}>
-                          {item.status === 'sent' && 'Sent'}
-                          {item.status === 'pending' && 'Pending'}
-                          {item.status === 'failed' && 'Failed'}
+                          {item.status === 'sent' && t.scanner.statuses.sent}
+                          {item.status === 'pending' && t.scanner.statuses.pending}
+                          {item.status === 'failed' && t.scanner.statuses.failed}
                           {item.responseCode ? ` · ${item.responseCode}` : ''}
                         </span>
                       </td>
@@ -257,28 +302,45 @@ export default function App() {
               <span className="pill" aria-hidden>
                 ●
               </span>
-              Webhook settings
+              {t.settings.title}
             </h2>
             <button className="button secondary" onClick={resetConfig}>
-              Reset
+              {t.settings.reset}
             </button>
           </div>
 
           <div className="stack">
             <div>
-              <label htmlFor="url">Webhook URL</label>
+              <label htmlFor="language">{t.settings.languageLabel}</label>
+              <select
+                id="language"
+                className="input"
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as Language)}
+              >
+                {AVAILABLE_LANGUAGES.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="small-note">{t.settings.languageHelper}</p>
+            </div>
+
+            <div>
+              <label htmlFor="url">{t.settings.urlLabel}</label>
               <input
                 id="url"
                 className="input"
                 value={config.url}
                 onChange={(event) => updateConfig({ url: event.target.value })}
-                placeholder="https://example.com/webhook"
+                placeholder={t.settings.urlPlaceholder}
                 autoComplete="off"
               />
             </div>
 
             <div>
-              <label htmlFor="method">HTTP verb</label>
+              <label htmlFor="method">{t.settings.methodLabel}</label>
               <select
                 id="method"
                 className="input"
@@ -289,11 +351,11 @@ export default function App() {
                   <option key={method}>{method}</option>
                 ))}
               </select>
-              <p className="small-note">If using GET, only headers are sent to protect query strings.</p>
+              <p className="small-note">{t.settings.methodNote}</p>
             </div>
 
             <div>
-              <label htmlFor="pause">Pause between scans</label>
+              <label htmlFor="pause">{t.settings.pauseLabel}</label>
               <div className="range-row">
                 <input
                   id="pause"
@@ -307,34 +369,34 @@ export default function App() {
                 />
                 <span className="range-value">{config.pauseMs} ms</span>
               </div>
-              <p className="small-note">Throttle repeated reads to avoid spamming your webhook.</p>
+              <p className="small-note">{t.settings.pauseNote}</p>
             </div>
 
             <div className="stack">
               <div className="flex-between">
-                <label>Custom headers</label>
+                <label>{t.settings.headersLabel}</label>
                 <button className="button secondary" onClick={addHeader}>
-                  Add header
+                  {t.settings.addHeader}
                 </button>
               </div>
-              {config.headers.length === 0 ? <p className="small-note">Use headers to pass secure tokens or API keys.</p> : null}
+              {config.headers.length === 0 ? <p className="small-note">{t.settings.headersEmpty}</p> : null}
               {config.headers.map((header, index) => (
                 <div className="header-row" key={index}>
                   <input
                     className="input"
-                    placeholder="Header name"
+                    placeholder={t.settings.headerName}
                     value={header.key}
                     onChange={(event) => updateHeader(index, 'key', event.target.value)}
                   />
                   <input
                     className="input"
-                    placeholder="Header value"
+                    placeholder={t.settings.headerValue}
                     value={header.value}
                     onChange={(event) => updateHeader(index, 'value', event.target.value)}
                     autoComplete="off"
                   />
                   <button className="button secondary" onClick={() => deleteHeader(index)}>
-                    Remove
+                    {t.settings.removeHeader}
                   </button>
                 </div>
               ))}
@@ -343,11 +405,11 @@ export default function App() {
             <div className="stack test-row">
               <div className="flex-between">
                 <div>
-                  <h3>Webhook test</h3>
-                  <p className="small-note">Send a sample payload to confirm your endpoint receives scans.</p>
+                  <h3>{t.settings.testTitle}</h3>
+                  <p className="small-note">{t.settings.testDescription}</p>
                 </div>
                 <button className="button" onClick={runWebhookTest} disabled={testingWebhook}>
-                  {testingWebhook ? 'Testing…' : 'Send test'}
+                  {testingWebhook ? t.settings.testSending : t.settings.testSend}
                 </button>
               </div>
               {webhookStatus ? (
@@ -358,16 +420,34 @@ export default function App() {
             </div>
 
             <div className="stack">
-              <h3>Privacy</h3>
-              <p className="small-note">
-                All configuration and scan history stay on this device in local storage. Header values are never logged or
-                sent anywhere except your configured webhook.
-              </p>
-              <p className="small-note">App version {APP_VERSION}.</p>
+              <h3>{t.settings.privacyTitle}</h3>
+              <p className="small-note">{t.settings.privacyCopy}</p>
+              <p className="small-note">{t.settings.appVersion(APP_VERSION)}</p>
             </div>
           </div>
         </section>
       )}
+
+      {showResetConfirm ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+          <div className="modal-sheet">
+            <div className="sheet-handle" aria-hidden />
+            <div className="stack modal-body">
+              <p className="eyebrow">{t.settings.resetConfirmTitle}</p>
+              <h3 id="reset-modal-title">{t.settings.reset}</h3>
+              <p className="small-note modal-copy">{t.settings.resetConfirm}</p>
+            </div>
+            <div className="modal-actions">
+              <button className="button secondary full-width" onClick={closeResetModal}>
+                {t.settings.resetCancel}
+              </button>
+              <button className="button danger full-width" onClick={confirmReset}>
+                {t.settings.resetConfirmAction}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

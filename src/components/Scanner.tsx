@@ -5,9 +5,14 @@ interface ScannerProps {
   active: boolean;
   onScan: (text: string, format: string) => void;
   onError?: (message: string) => void;
+  messages: {
+    insecure: string;
+    unsupported: string;
+    startFailed: string;
+  };
 }
 
-export function Scanner({ active, onScan, onError }: ScannerProps) {
+export function Scanner({ active, onScan, onError, messages }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const lastResultRef = useRef<string | null>(null);
@@ -23,12 +28,12 @@ export function Scanner({ active, onScan, onError }: ScannerProps) {
     }
 
     if (!window.isSecureContext) {
-      setPermissionError('Camera access requires HTTPS (or localhost for dev).');
+      setPermissionError(messages.insecure);
       return undefined;
     }
 
     if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-      setPermissionError('Camera access is not supported in this browser.');
+      setPermissionError(messages.unsupported);
       return undefined;
     }
 
@@ -67,7 +72,7 @@ export function Scanner({ active, onScan, onError }: ScannerProps) {
         },
       )
       .catch((error) => {
-        const message = error instanceof Error ? error.message : 'Unable to start scanner';
+        const message = error instanceof Error ? error.message : messages.startFailed;
         setPermissionError(message);
         onError?.(message);
       });
