@@ -24,12 +24,7 @@ export async function sendWebhook(
     const response = await fetch(config.url, {
       method: config.method,
       headers,
-      body: config.method === 'GET' ? undefined : JSON.stringify({
-        id: payload.id,
-        text: payload.text,
-        format: payload.format,
-        scannedAt: payload.scannedAt,
-      }),
+      body: config.method === 'GET' ? undefined : JSON.stringify({ code: payload.text }),
     });
 
     return {
