@@ -564,7 +564,11 @@ th {
     padding: 0.85rem 0.85rem 1.4rem;
   }
 
-  .brand-logo,
+  .brand-logo {
+    height: 50px;
+    width: auto;
+  }
+
   .brand-badge {
     width: 28px;
     height: 28px;
