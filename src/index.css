@@ -119,6 +119,18 @@ p {
   box-shadow: 0 14px 45px rgba(15, 23, 42, 0.06);
 }
 
+.webhook-card {
+  padding: 1rem;
+  border: 1px solid #d7dded;
+  border-radius: 14px;
+  background: #f9fbff;
+}
+
+.webhook-card h3 {
+  margin: 0;
+  color: #1834a8;
+}
+
 .button {
   background: #1834a8;
   color: #ffffff;
@@ -397,6 +409,77 @@ th {
   border-radius: 14px;
   pointer-events: none;
   box-shadow: 0 0 0 3px rgba(77, 115, 255, 0.5);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.scanner-shell.scan-detected .scanner-overlay,
+.scanner-shell.scan-sent .scanner-overlay {
+  border-color: #5ee38b;
+  box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.5), inset 0 0 32px rgba(34, 197, 94, 0.16);
+}
+
+.scanner-shell.scan-failed .scanner-overlay {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.45), inset 0 0 32px rgba(245, 158, 11, 0.14);
+}
+
+.scan-feedback {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 1.35rem;
+  transform: translateX(-50%);
+  width: min(88%, 420px);
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 14px;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(5px);
+  text-align: center;
+  pointer-events: none;
+}
+
+.scan-feedback strong {
+  font-size: clamp(1.05rem, 4.5vw, 1.45rem);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.scan-feedback.detected,
+.scan-feedback.sent {
+  background: rgba(18, 128, 60, 0.94);
+  animation: scan-confirm 180ms ease-out;
+}
+
+.scan-feedback.failed {
+  background: rgba(180, 83, 9, 0.95);
+}
+
+.scan-feedback-value {
+  width: 100%;
+  overflow: hidden;
+  font-size: clamp(1rem, 4vw, 1.3rem);
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes scan-confirm {
+  from {
+    opacity: 0.75;
+    transform: translateX(-50%) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan-feedback.detected,
+  .scan-feedback.sent {
+    animation: none;
+  }
 }
 
 .flex-between {
