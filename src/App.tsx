@@ -2,14 +2,30 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scanner } from './components/Scanner';
 import { usePersistentState } from './hooks/usePersistentState';
 import { AVAILABLE_LANGUAGES, Language, getTranslations } from './lib/i18n';
-import { ScanRecord, WebhookConfig } from './lib/types';
+import { HttpMethod, ScanRecord, WebhookConfig, WebhookTarget } from './lib/types';
 import { sendWebhook } from './lib/webhook';
 
 function createBlankConfig(): WebhookConfig {
-  return { url: '', method: 'POST', headers: [], pauseMs: 1200 };
+  return {
+    webhooks: [
+      { url: '', method: 'POST', headers: [] },
+      { url: '', method: 'POST', headers: [] },
+    ],
+    primaryFormats: ['QR_CODE'],
+    pauseMs: 1200,
+  };
 }
 
-const METHODS: WebhookConfig['method'][] = ['POST', 'PUT', 'PATCH', 'GET'];
+const METHODS: HttpMethod[] = ['POST', 'PUT', 'PATCH', 'GET'];
+
+function normalizeFormat(format: string) {
+  return format.trim().toUpperCase();
+}
+
+function selectWebhook(config: WebhookConfig, format: string) {
+  const primaryFormats = config.primaryFormats.map(normalizeFormat);
+  return primaryFormats.includes(normalizeFormat(format)) ? config.webhooks[0] : config.webhooks[1];
+}
 
 function todayRange() {
   const now = new Date();
@@ -47,9 +63,7 @@ export default function App() {
   const [config, setConfig] = usePersistentState<WebhookConfig>('webhook-config', createBlankConfig());
   const [language, setLanguage] = usePersistentState<Language>('language', 'en');
   const [scannerActive, setScannerActive] = useState(false);
-  const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
-  const [lastScanAt, setLastScanAt] = useState<number | null>(null);
   const lastScanAtRef = useRef<number | null>(null);
   const todayHistory = useMemo(() => filterToday(history), [history]);
   const [lastError, setLastError] = useState<string | null>(null);
@@ -69,10 +83,21 @@ export default function App() {
 
   useEffect(() => {
     setConfig((prev) => {
+      // Migrate the former single-webhook configuration without losing local settings.
+      const legacy = prev as WebhookConfig & Partial<WebhookTarget>;
+      const blank = createBlankConfig();
       const normalized: WebhookConfig = {
-        url: prev?.url ?? '',
-        method: prev?.method ?? 'POST',
-        headers: Array.isArray(prev?.headers) ? prev.headers : [],
+        webhooks: Array.isArray(prev?.webhooks) && prev.webhooks.length === 2
+          ? prev.webhooks
+          : [
+              {
+                url: legacy?.url ?? '',
+                method: legacy?.method ?? 'POST',
+                headers: Array.isArray(legacy?.headers) ? legacy.headers : [],
+              },
+              blank.webhooks[1],
+            ],
+        primaryFormats: Array.isArray(prev?.primaryFormats) ? prev.primaryFormats : ['QR_CODE'],
         pauseMs:
           prev?.pauseMs === undefined || Number.isNaN(prev.pauseMs) || prev.pauseMs < 0
             ? 1200
@@ -80,10 +105,10 @@ export default function App() {
       };
 
       const unchanged =
-        normalized.url === prev?.url &&
-        normalized.method === prev?.method &&
+        normalized.webhooks === prev?.webhooks &&
+        normalized.primaryFormats === prev?.primaryFormats &&
         normalized.pauseMs === prev?.pauseMs &&
-        normalized.headers === prev?.headers;
+        Array.isArray(prev?.webhooks);
 
       return unchanged ? prev : normalized;
     });
@@ -121,7 +146,6 @@ export default function App() {
     }
 
     lastScanAtRef.current = now;
-    setLastScanAt(now);
 
     const record: ScanRecord = {
       id: crypto.randomUUID(),
@@ -132,11 +156,10 @@ export default function App() {
     };
 
     setHistory((prev) => pruneToToday([record, ...prev]));
-    setSending(true);
     sendingRef.current = true;
     setLastError(null);
 
-    const result = await sendWebhook({ ...record }, config);
+    const result = await sendWebhook({ ...record }, selectWebhook(config, format));
     setHistory((prev) =>
       prev.map((item) =>
         item.id === record.id
@@ -144,7 +167,6 @@ export default function App() {
           : item,
       ),
     );
-    setSending(false);
     sendingRef.current = false;
   };
 
@@ -152,23 +174,32 @@ export default function App() {
     setConfig((prev) => ({ ...prev, ...value }));
   };
 
-  const addHeader = () => {
-    setConfig((prev) => ({ ...prev, headers: [...prev.headers, { key: '', value: '' }] }));
+  const updateWebhook = (index: number, value: Partial<WebhookTarget>) => {
+    setConfig((prev) => {
+      const webhooks = [...prev.webhooks] as [WebhookTarget, WebhookTarget];
+      webhooks[index] = { ...webhooks[index], ...value };
+      return { ...prev, webhooks };
+    });
   };
 
-  const updateHeader = (index: number, key: 'key' | 'value', value: string) => {
+  const addHeader = (webhookIndex: number) => {
+    const target = config.webhooks[webhookIndex];
+    updateWebhook(webhookIndex, { headers: [...target.headers, { key: '', value: '' }] });
+  };
+
+  const updateHeader = (webhookIndex: number, index: number, key: 'key' | 'value', value: string) => {
     setConfig((prev) => {
-      const headers = [...prev.headers];
+      const webhooks = [...prev.webhooks] as [WebhookTarget, WebhookTarget];
+      const headers = [...webhooks[webhookIndex].headers];
       headers[index] = { ...headers[index], [key]: value };
-      return { ...prev, headers };
+      webhooks[webhookIndex] = { ...webhooks[webhookIndex], headers };
+      return { ...prev, webhooks };
     });
   };
 
-  const deleteHeader = (index: number) => {
-    setConfig((prev) => {
-      const headers = prev.headers.filter((_, i) => i !== index);
-      return { ...prev, headers };
-    });
+  const deleteHeader = (webhookIndex: number, index: number) => {
+    const target = config.webhooks[webhookIndex];
+    updateWebhook(webhookIndex, { headers: target.headers.filter((_, i) => i !== index) });
   };
 
   const resetConfig = () => {
@@ -190,8 +221,9 @@ export default function App() {
 
   const handleCloseClearModal = () => setShowClearConfirm(false);
 
-  const runWebhookTest = async () => {
-    if (!config.url) {
+  const runWebhookTest = async (webhookIndex: number) => {
+    const target = config.webhooks[webhookIndex];
+    if (!target.url) {
       setWebhookStatus(t.settings.testMissingUrl);
       return;
     }
@@ -202,7 +234,7 @@ export default function App() {
     const now = new Date().toISOString();
     const result = await sendWebhook(
       { id: `test-${now}`, text: 'Test barcode', format: 'TEST', scannedAt: now },
-      config,
+      target,
     );
 
     if (result.status === 'sent') {
@@ -337,30 +369,18 @@ export default function App() {
             </div>
 
             <div>
-              <label htmlFor="url">{t.settings.urlLabel}</label>
+              <label htmlFor="primary-formats">{t.settings.primaryFormatsLabel}</label>
               <input
-                id="url"
+                id="primary-formats"
                 className="input"
-                value={config.url}
-                onChange={(event) => updateConfig({ url: event.target.value })}
-                placeholder={t.settings.urlPlaceholder}
+                value={config.primaryFormats.join(', ')}
+                onChange={(event) =>
+                  updateConfig({ primaryFormats: event.target.value.split(',').map(normalizeFormat).filter(Boolean) })
+                }
+                placeholder="QR_CODE, DATA_MATRIX"
                 autoComplete="off"
               />
-            </div>
-
-            <div>
-              <label htmlFor="method">{t.settings.methodLabel}</label>
-              <select
-                id="method"
-                className="input"
-                value={config.method}
-                onChange={(event) => updateConfig({ method: event.target.value as WebhookConfig['method'] })}
-              >
-                {METHODS.map((method) => (
-                  <option key={method}>{method}</option>
-                ))}
-              </select>
-              <p className="small-note">{t.settings.methodNote}</p>
+              <p className="small-note">{t.settings.primaryFormatsNote}</p>
             </div>
 
             <div>
@@ -381,52 +401,58 @@ export default function App() {
               <p className="small-note">{t.settings.pauseNote}</p>
             </div>
 
-            <div className="stack">
-              <div className="flex-between">
-                <label>{t.settings.headersLabel}</label>
-                <button className="button secondary" onClick={addHeader}>
-                  {t.settings.addHeader}
-                </button>
-              </div>
-              {config.headers.length === 0 ? <p className="small-note">{t.settings.headersEmpty}</p> : null}
-              {config.headers.map((header, index) => (
-                <div className="header-row" key={index}>
+            {config.webhooks.map((webhook, webhookIndex) => (
+              <div className="stack webhook-card" key={webhookIndex}>
+                <h3>{t.settings.webhookName(webhookIndex + 1)}</h3>
+                <div>
+                  <label htmlFor={`url-${webhookIndex}`}>{t.settings.urlLabel}</label>
                   <input
+                    id={`url-${webhookIndex}`}
                     className="input"
-                    placeholder={t.settings.headerName}
-                    value={header.key}
-                    onChange={(event) => updateHeader(index, 'key', event.target.value)}
-                  />
-                  <input
-                    className="input"
-                    placeholder={t.settings.headerValue}
-                    value={header.value}
-                    onChange={(event) => updateHeader(index, 'value', event.target.value)}
+                    value={webhook.url}
+                    onChange={(event) => updateWebhook(webhookIndex, { url: event.target.value })}
+                    placeholder={t.settings.urlPlaceholder}
                     autoComplete="off"
                   />
-                  <button className="button secondary" onClick={() => deleteHeader(index)}>
-                    {t.settings.removeHeader}
-                  </button>
                 </div>
-              ))}
-            </div>
-
-            <div className="stack test-row">
-              <div className="flex-between">
                 <div>
-                  <h3>{t.settings.testTitle}</h3>
-                  <p className="small-note">{t.settings.testDescription}</p>
+                  <label htmlFor={`method-${webhookIndex}`}>{t.settings.methodLabel}</label>
+                  <select
+                    id={`method-${webhookIndex}`}
+                    className="input"
+                    value={webhook.method}
+                    onChange={(event) => updateWebhook(webhookIndex, { method: event.target.value as HttpMethod })}
+                  >
+                    {METHODS.map((method) => <option key={method}>{method}</option>)}
+                  </select>
+                  <p className="small-note">{t.settings.methodNote}</p>
                 </div>
-                <button className="button" onClick={runWebhookTest} disabled={testingWebhook}>
+                <div className="stack">
+                  <div className="flex-between">
+                    <label>{t.settings.headersLabel}</label>
+                    <button className="button secondary" onClick={() => addHeader(webhookIndex)}>
+                      {t.settings.addHeader}
+                    </button>
+                  </div>
+                  {webhook.headers.length === 0 ? <p className="small-note">{t.settings.headersEmpty}</p> : null}
+                  {webhook.headers.map((header, index) => (
+                    <div className="header-row" key={index}>
+                      <input className="input" placeholder={t.settings.headerName} value={header.key}
+                        onChange={(event) => updateHeader(webhookIndex, index, 'key', event.target.value)} />
+                      <input className="input" placeholder={t.settings.headerValue} value={header.value}
+                        onChange={(event) => updateHeader(webhookIndex, index, 'value', event.target.value)} autoComplete="off" />
+                      <button className="button secondary" onClick={() => deleteHeader(webhookIndex, index)}>
+                        {t.settings.removeHeader}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button className="button" onClick={() => runWebhookTest(webhookIndex)} disabled={testingWebhook}>
                   {testingWebhook ? t.settings.testSending : t.settings.testSend}
                 </button>
               </div>
-              {webhookStatus ? (
-                <p className="small-note" role="status">
-                  {webhookStatus}
-                </p>
-              ) : null}
-            </div>
+            ))}
+            <p className="small-note" role="status">{webhookStatus}</p>
 
             <div className="stack">
               <h3>{t.settings.privacyTitle}</h3>

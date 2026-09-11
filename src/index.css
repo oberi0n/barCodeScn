@@ -119,6 +119,18 @@ p {
   box-shadow: 0 14px 45px rgba(15, 23, 42, 0.06);
 }
 
+.webhook-card {
+  padding: 1rem;
+  border: 1px solid #d7dded;
+  border-radius: 14px;
+  background: #f9fbff;
+}
+
+.webhook-card h3 {
+  margin: 0;
+  color: #1834a8;
+}
+
 .button {
   background: #1834a8;
   color: #ffffff;
