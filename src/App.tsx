@@ -141,6 +141,11 @@ export default function App() {
     return () => document.body.classList.remove('no-scroll');
   }, [scannerActive]);
 
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
   useEffect(() => {
     if (!scannerActive) return undefined;
     if (!('geolocation' in navigator)) {
