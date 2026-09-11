@@ -1,4 +1,4 @@
-const CACHE = 'barcode-scn-cache-v4';
+const CACHE = 'barcode-scn-cache-v5';
 const ASSETS = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg'];
 
 self.addEventListener('install', (event) => {

@@ -506,6 +506,11 @@ th {
   font-size: 0.82rem;
 }
 
+.location-available {
+  color: #1b8a3c;
+  font-weight: 700;
+}
+
 .history-location {
   display: block;
   margin-top: 0.2rem;
@@ -521,6 +526,65 @@ th {
   color: #c11a36;
   font-size: 0.76rem;
   line-height: 1.25;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem;
+  border: 1px solid #d7dded;
+  border-radius: 12px;
+  background: #f9fbff;
+}
+
+.toggle-row > span,
+.toggle-row .small-note {
+  display: block;
+}
+
+.toggle-row input {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  accent-color: #1834a8;
+}
+
+.api-test-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.debug-panel {
+  padding: 0.85rem;
+  border: 1px solid #b8c4e5;
+  border-radius: 14px;
+  background: #f4f7ff;
+}
+
+.debug-panel h3 {
+  margin: 0;
+}
+
+.debug-log {
+  height: 240px;
+  overflow: auto;
+  padding: 0.7rem;
+  border-radius: 10px;
+  background: #111827;
+  color: #d1fae5;
+  font: 0.75rem/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.debug-log p {
+  margin: 0 0 0.3rem;
+}
+
+.debug-log time {
+  color: #93c5fd;
 }
 
 .version-inline {

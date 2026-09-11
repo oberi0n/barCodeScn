@@ -13,6 +13,8 @@ export interface WebhookBody {
   accuracy?: number;
 }
 
+export type WebhookDebugLogger = (message: string) => void;
+
 function hasValidLocation(payload: Omit<ScanRecord, 'status'>): boolean {
   return Boolean(
     payload.location &&
@@ -24,6 +26,7 @@ function hasValidLocation(payload: Omit<ScanRecord, 'status'>): boolean {
 export async function sendWebhook(
   payload: Omit<ScanRecord, 'status'>,
   config: WebhookTarget,
+  addDebugLog?: WebhookDebugLogger,
 ): Promise<SendResult> {
   console.info('[webhook] sending', {
     url: config.url,
@@ -31,16 +34,19 @@ export async function sendWebhook(
     barcode: payload.text,
     hasLocation: Boolean(payload.location),
   });
+  addDebugLog?.(`Webhook attempt: ${config.method} ${config.url || '(URL not configured)'}; barcode=${payload.text}; location=${payload.location ? 'yes' : 'no'}`);
 
   if (!config.url) {
     const error = 'URL not configured';
     console.error('[webhook] failed', error);
+    addDebugLog?.(`Webhook NOT sent: ${error}`);
     return { status: 'failed', error };
   }
 
   if (!hasValidLocation(payload)) {
     const error = 'Location unavailable - webhook not sent';
     console.error('[webhook] failed', error);
+    addDebugLog?.(`Webhook NOT sent: ${error}`);
     return { status: 'failed', error };
   }
 
@@ -62,6 +68,8 @@ export async function sendWebhook(
       url: config.url,
       body: config.method === 'GET' ? undefined : body,
     });
+    addDebugLog?.(`${config.method} ${config.url}`);
+    addDebugLog?.(`Payload: ${JSON.stringify(body)}`);
 
     const response = await fetch(config.url, {
       method: config.method,
@@ -76,6 +84,7 @@ export async function sendWebhook(
       status: response.status,
       ok: response.ok,
     });
+    addDebugLog?.(`HTTP response: ${response.status}`);
 
     return {
       status: response.ok ? 'sent' : 'failed',
@@ -84,6 +93,7 @@ export async function sendWebhook(
     };
   } catch (error) {
     console.error('[webhook] failed', error);
+    addDebugLog?.(`Webhook failed: ${error instanceof Error ? error.message : 'Network error'}`);
     return {
       status: 'failed',
       error: 'Network error',

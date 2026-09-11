@@ -38,6 +38,7 @@ export default [
         navigator: 'readonly',
         requestAnimationFrame: 'readonly',
         self: 'readonly',
+        URL: 'readonly',
         window: 'readonly',
       },
       parserOptions: { sourceType: 'module' },

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScanFeedback, Scanner } from './components/Scanner';
 import { usePersistentState } from './hooks/usePersistentState';
 import { AVAILABLE_LANGUAGES, Language, getTranslations } from './lib/i18n';
@@ -24,7 +24,14 @@ function normalizeFormat(format: string) {
 
 function selectWebhook(config: WebhookConfig, format: string) {
   const primaryFormats = config.primaryFormats.map(normalizeFormat);
-  return primaryFormats.includes(normalizeFormat(format)) ? config.webhooks[0] : config.webhooks[1];
+  const index = primaryFormats.includes(normalizeFormat(format)) ? 0 : 1;
+  return { target: config.webhooks[index], index };
+}
+
+interface DebugEntry {
+  id: number;
+  timestamp: string;
+  message: string;
 }
 
 function todayRange() {
@@ -64,6 +71,16 @@ function locationStatusFromError(error: GeolocationPositionError): LocationStatu
   return 'unavailable';
 }
 
+function healthUrlFromWebhook(webhookUrl: string): string | null {
+  if (!webhookUrl) return null;
+  const url = new URL(webhookUrl, window.location.origin);
+  if (!/\/scan\/?$/.test(url.pathname)) return null;
+  url.pathname = url.pathname.replace(/\/scan\/?$/, '/healthz');
+  url.search = '';
+  url.hash = '';
+  return webhookUrl.startsWith('/') ? `${url.pathname}` : url.toString();
+}
+
 function filterToday(records: ScanRecord[]) {
   return records.filter((record) => isToday(record.scannedAt)).sort((a, b) => b.scannedAt.localeCompare(a.scannedAt));
 }
@@ -87,15 +104,36 @@ export default function App() {
   const latestLocationRef = useRef<ScanLocation | null>(null);
   const locationStatusRef = useRef<LocationStatus>('unavailable');
   const [locationStatus, setLocationStatus] = useState<LocationStatus>('unavailable');
+  const [currentLocation, setCurrentLocation] = useState<ScanLocation | null>(null);
+  const [locationAcquiring, setLocationAcquiring] = useState(false);
+  const [debugMode, setDebugMode] = usePersistentState<boolean>('debug-mode', false);
+  const [debugEntries, setDebugEntries] = useState<DebugEntry[]>([]);
+  const debugSequenceRef = useRef(0);
   const todayHistory = useMemo(() => filterToday(history), [history]);
   const [lastError, setLastError] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const APP_VERSION = '0.3.4';
+  const APP_VERSION = '0.3.5';
   const scannerSectionRef = useRef<HTMLElement | null>(null);
   const t = useMemo(() => getTranslations(language), [language]);
+  const addDebugLog = useCallback((message: string) => {
+    if (!debugMode) return;
+    const entry: DebugEntry = {
+      id: ++debugSequenceRef.current,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      message,
+    };
+    setDebugEntries((previous) => [...previous, entry].slice(-50));
+  }, [debugMode]);
+
+  useEffect(() => {
+    if (!debugMode) return;
+    addDebugLog(`Webhook 1 URL: ${config.webhooks[0].url || '(not configured)'}`);
+    addDebugLog(`Webhook 2 URL: ${config.webhooks[1].url || '(not configured)'}`);
+    addDebugLog(`Primary formats: ${config.primaryFormats.join(', ') || '(none)'}`);
+  }, [debugMode]);
 
   useEffect(() => {
     if (todayHistory.length !== history.length) {
@@ -258,6 +296,56 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!scannerActive) return undefined;
+    setLocationAcquiring(true);
+    if (!('geolocation' in navigator)) {
+      locationStatusRef.current = 'unsupported';
+      setLocationStatus('unsupported');
+      setLocationAcquiring(false);
+      addDebugLog('Geolocation unsupported');
+      return undefined;
+    }
+
+    let active = true;
+    addDebugLog('Geolocation watch started');
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (!active) return;
+        latestLocationRef.current = locationFromPosition(position);
+        setCurrentLocation(latestLocationRef.current);
+        locationStatusRef.current = 'available';
+        setLocationStatus('available');
+        setLocationAcquiring(false);
+        addDebugLog(`Location acquired: lat=${position.coords.latitude.toFixed(6)} lon=${position.coords.longitude.toFixed(6)} accuracy=${Math.round(position.coords.accuracy)}m`);
+      },
+      (error) => {
+        if (!active) return;
+        const status = locationStatusFromError(error);
+        if (status === 'permission-denied') {
+          latestLocationRef.current = null;
+          setCurrentLocation(null);
+        }
+        locationStatusRef.current = status;
+        setLocationStatus(status);
+        setLocationAcquiring(false);
+        addDebugLog(`Geolocation ${status}`);
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
+    );
+
+    return () => {
+      active = false;
+      navigator.geolocation.clearWatch(watchId);
+      addDebugLog('Geolocation watch stopped');
+    };
+  }, [scannerActive, addDebugLog]);
+
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
+  useEffect(() => {
     const modalOpen = showResetConfirm || showClearConfirm;
     document.body.classList.toggle('modal-open', modalOpen);
     return () => document.body.classList.remove('modal-open');
@@ -335,32 +423,48 @@ export default function App() {
       locationStatus: recentLocation ? 'available' : locationStatusRef.current,
     };
     console.info('[scan] accepted', { text, format });
+    addDebugLog(`Barcode accepted: ${text} ${format}`);
 
     setHistory((prev) => pruneToToday([record, ...prev]));
     sendingRef.current = true;
     setLastError(null);
     const sequence = ++feedbackSequenceRef.current;
     if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
-    setScanFeedback({ phase: 'detected', text, format });
+    setScanFeedback({
+      phase: 'detected',
+      text,
+      format,
+      detail: recentLocation ? t.scanner.feedback.sendingWebhook : t.scanner.feedback.waitingLocation,
+    });
     playConfirmation();
+    if (recentLocation) {
+      const ageSeconds = Math.max(0, Math.round((Date.now() - (recentLocation.timestamp ?? Date.now())) / 1000));
+      addDebugLog(`Using cached location: age=${ageSeconds}s`);
+    } else {
+      addDebugLog('No recent location available');
+    }
 
     const locationPromise = recentLocation
       ? Promise.resolve<ScanLocation | null>(recentLocation)
       : new Promise<ScanLocation | null>((resolve) => {
           if (!('geolocation' in navigator) || locationStatusRef.current === 'permission-denied') {
+            addDebugLog(`Current location not requested: ${locationStatusRef.current}`);
             resolve(null);
             return;
           }
 
+          addDebugLog('Requesting current position');
           navigator.geolocation.getCurrentPosition(
             (position) => {
               const location = locationFromPosition(position);
               latestLocationRef.current = location;
+              setCurrentLocation(location);
               locationStatusRef.current = 'available';
               setLocationStatus('available');
               setHistory((previous) => previous.map((item) =>
                 item.id === record.id ? { ...item, location, locationStatus: 'available' } : item,
               ));
+              addDebugLog(`Location acquired: lat=${location.latitude.toFixed(6)} lon=${location.longitude.toFixed(6)} accuracy=${Math.round(location.accuracy ?? 0)}m`);
               resolve(location);
             },
             (error) => {
@@ -373,6 +477,7 @@ export default function App() {
                 locationStatusRef.current = status;
                 setLocationStatus(status);
               }
+              addDebugLog(`Geolocation ${status}`);
               setHistory((previous) => previous.map((item) => {
                 if (item.id !== record.id || item.location) return item;
                 return hasRecentLocation && cachedLocation
@@ -387,10 +492,17 @@ export default function App() {
 
     void (async () => {
       const webhookLocation = await locationPromise;
-      const target = selectWebhook(config, format);
+      if (feedbackSequenceRef.current === sequence && webhookLocation) {
+        setScanFeedback({ phase: 'detected', text, format, detail: t.scanner.feedback.sendingWebhook });
+      }
+      const { target, index } = selectWebhook(config, format);
+      addDebugLog(`Format: ${format}`);
+      addDebugLog(`Selected webhook: #${index + 1}`);
+      addDebugLog(`URL: ${target.url || '(not configured)'}`);
+      addDebugLog(`Method: ${target.method}`);
       console.info('[scan] invoking webhook');
       const [result] = await Promise.all([
-        sendWebhook({ ...record, location: webhookLocation ?? undefined }, target),
+        sendWebhook({ ...record, location: webhookLocation ?? undefined }, target, addDebugLog),
         new Promise((resolve) => window.setTimeout(resolve, 1000)),
       ]);
       setHistory((prev) =>
@@ -474,19 +586,44 @@ export default function App() {
       setWebhookStatus(t.settings.testMissingUrl);
       return;
     }
-    const location = latestLocationRef.current;
-    if (!location || !Number.isFinite(location.latitude) || !Number.isFinite(location.longitude)) {
+    setTestingWebhook(true);
+    setWebhookStatus(t.settings.testSendingStatus);
+    addDebugLog(`Test API started for webhook #${webhookIndex + 1}: ${target.method} ${target.url}`);
+
+    if (!('geolocation' in navigator)) {
       setWebhookStatus(t.settings.testLocationUnavailable);
+      addDebugLog('Test API stopped: geolocation unsupported');
+      setTestingWebhook(false);
       return;
     }
 
-    setTestingWebhook(true);
-    setWebhookStatus(t.settings.testSendingStatus);
+    addDebugLog('Requesting current position for API test');
+    const location = await new Promise<ScanLocation | null>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve(locationFromPosition(position)),
+        (error) => {
+          addDebugLog(`Test API geolocation failed: ${locationStatusFromError(error)}`);
+          resolve(null);
+        },
+        { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
+      );
+    });
+    if (!location) {
+      setWebhookStatus(t.settings.testLocationUnavailable);
+      setTestingWebhook(false);
+      return;
+    }
+    latestLocationRef.current = location;
+    setCurrentLocation(location);
+    locationStatusRef.current = 'available';
+    setLocationStatus('available');
+    addDebugLog(`Test location acquired: lat=${location.latitude.toFixed(6)} lon=${location.longitude.toFixed(6)} accuracy=${Math.round(location.accuracy ?? 0)}m`);
 
     const now = new Date().toISOString();
     const result = await sendWebhook(
-      { id: `test-${now}`, text: 'Test barcode', format: 'TEST', scannedAt: now, location },
+      { id: `test-${now}`, text: 'TEST-BARCODE', format: 'TEST', scannedAt: now, location },
       target,
+      addDebugLog,
     );
 
     if (result.status === 'sent') {
@@ -496,6 +633,33 @@ export default function App() {
     }
 
     setTestingWebhook(false);
+  };
+
+  const runNetworkTest = async (webhookIndex: number) => {
+    const healthUrl = healthUrlFromWebhook(config.webhooks[webhookIndex].url);
+    if (!healthUrl) {
+      const message = t.settings.networkFailed('invalid webhook URL');
+      setWebhookStatus(message);
+      addDebugLog('Test network stopped: cannot derive /healthz from webhook URL');
+      return;
+    }
+
+    setTestingWebhook(true);
+    setWebhookStatus(t.settings.networkTesting);
+    addDebugLog(`Test network: GET ${healthUrl}`);
+    try {
+      const response = await fetch(healthUrl, { method: 'GET' });
+      addDebugLog(`Network test HTTP response: ${response.status}`);
+      setWebhookStatus(response.ok
+        ? t.settings.networkSuccess(response.status)
+        : t.settings.networkFailed(`HTTP ${response.status}`));
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'Network error';
+      addDebugLog(`Network test failed: ${reason}`);
+      setWebhookStatus(t.settings.networkFailed('Network error'));
+    } finally {
+      setTestingWebhook(false);
+    }
   };
 
   return (
@@ -545,13 +709,20 @@ export default function App() {
               active={scannerActive}
               onScan={handleScan}
               onError={setLastError}
+              onDebug={addDebugLog}
               feedback={scanFeedback}
               labels={t.scanner.feedback}
               messages={t.scanner.cameraErrors}
             />
           ) : null}
-          {scannerActive && locationStatus !== 'available' ? (
-            <p className="small-note location-note">{t.scanner.locationStatuses[locationStatus]}</p>
+          {scannerActive ? (
+            <p className={`small-note location-note location-${locationStatus}`} role="status">
+              {locationAcquiring
+                ? t.scanner.locationStatuses.acquiring
+                : locationStatus === 'available'
+                  ? t.scanner.locationStatuses.ready(currentLocation?.accuracy)
+                  : t.scanner.locationStatuses[locationStatus]}
+            </p>
           ) : null}
           {lastError ? <p className="small-note">{lastError}</p> : null}
 
@@ -634,6 +805,19 @@ export default function App() {
               <p className="small-note">{t.settings.languageHelper}</p>
             </div>
 
+            <label className="toggle-row" htmlFor="debug-mode">
+              <span>
+                <strong>{t.settings.debugMode}</strong>
+                <span className="small-note">{t.settings.debugDescription}</span>
+              </span>
+              <input
+                id="debug-mode"
+                type="checkbox"
+                checked={debugMode}
+                onChange={(event) => setDebugMode(event.target.checked)}
+              />
+            </label>
+
             <div>
               <label htmlFor="primary-formats">{t.settings.primaryFormatsLabel}</label>
               <input
@@ -713,12 +897,34 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-                <button className="button" onClick={() => runWebhookTest(webhookIndex)} disabled={testingWebhook}>
-                  {testingWebhook ? t.settings.testSending : t.settings.testSend}
-                </button>
+                <div className="api-test-actions">
+                  <button className="button" onClick={() => runWebhookTest(webhookIndex)} disabled={testingWebhook}>
+                    {testingWebhook ? t.settings.testSending : t.settings.testApi}
+                  </button>
+                  <button className="button secondary" onClick={() => runNetworkTest(webhookIndex)} disabled={testingWebhook}>
+                    {t.settings.testNetwork}
+                  </button>
+                </div>
               </div>
             ))}
             <p className="small-note" role="status">{webhookStatus}</p>
+
+            {debugMode ? (
+              <div className="debug-panel stack">
+                <div className="flex-between">
+                  <h3>{t.settings.debugTitle}</h3>
+                  <button className="button secondary" onClick={() => setDebugEntries([])}>
+                    {t.settings.clearDebug}
+                  </button>
+                </div>
+                <div className="debug-log" role="log" aria-live="polite">
+                  {debugEntries.length === 0 ? <p>{t.settings.debugEmpty}</p> : null}
+                  {debugEntries.map((entry) => (
+                    <p key={entry.id}><time>{entry.timestamp}</time> {entry.message}</p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="stack">
               <h3>{t.settings.privacyTitle}</h3>

@@ -7,17 +7,18 @@ export interface ScanFeedback {
   format: string;
   responseCode?: number;
   error?: string;
+  detail?: string;
 }
 
 interface ScannerProps {
   active: boolean;
   onScan: (text: string, format: string) => boolean;
   onError?: (message: string) => void;
+  onDebug?: (message: string) => void;
   feedback: ScanFeedback | null;
   labels: {
     ready: string;
     detected: string;
-    sending: string;
     sent: (code?: number) => string;
     failed: (reason: string) => string;
   };
@@ -83,16 +84,18 @@ async function openCamera(): Promise<MediaStream> {
   }
 }
 
-export function Scanner({ active, onScan, onError, feedback, labels, messages }: ScannerProps) {
+export function Scanner({ active, onScan, onError, onDebug, feedback, labels, messages }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const onScanRef = useRef(onScan);
   const onErrorRef = useRef(onError);
+  const onDebugRef = useRef(onDebug);
   const [permissionError, setPermissionError] = useState<string | null>(null);
 
   onScanRef.current = onScan;
   onErrorRef.current = onError;
+  onDebugRef.current = onDebug;
 
   useEffect(() => {
     if (!active) return undefined;
@@ -154,6 +157,7 @@ export function Scanner({ active, onScan, onError, feedback, labels, messages }:
         paused: video.paused,
         trackSettings: stream.getVideoTracks()[0]?.getSettings(),
       });
+      onDebugRef.current?.(`Scanner started: ${video.videoWidth}x${video.videoHeight}`);
 
       controlsRef.current = await reader.decodeFromVideoElement(video, (result, error) => {
         if (cancelled || !result) {
@@ -169,6 +173,7 @@ export function Scanner({ active, onScan, onError, feedback, labels, messages }:
         if (!onScanRef.current(text, format)) return;
 
         console.info('Barcode detected', { format, value: text });
+        onDebugRef.current?.(`Barcode detected: ${text} ${format}`);
       });
       console.info('ZXing scanning started');
     };
@@ -205,7 +210,7 @@ export function Scanner({ active, onScan, onError, feedback, labels, messages }:
           <strong>{feedback ? (feedback.phase === 'failed' ? '⚠' : '✓') : '●'} {feedbackTitle}</strong>
           {feedback ? <span className="scan-feedback-value">{feedback.text}</span> : null}
           {feedback ? <span>{feedback.format.replaceAll('_', '-')}</span> : null}
-          {feedback?.phase === 'detected' ? <span>{labels.sending}</span> : null}
+          {feedback?.detail ? <span>{feedback.detail}</span> : null}
         </div>
       </div>
       {permissionError ? <p className="small-note">{permissionError}</p> : null}

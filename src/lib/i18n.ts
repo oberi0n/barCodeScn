@@ -31,10 +31,14 @@ export interface Translations {
       ready: string;
       detected: string;
       sending: string;
+      waitingLocation: string;
+      sendingWebhook: string;
       sent: (code?: number) => string;
       failed: (reason: string) => string;
     };
     locationStatuses: {
+      acquiring: string;
+      ready: (accuracy?: number) => string;
       unavailable: string;
       'permission-denied': string;
       timeout: string;
@@ -89,6 +93,16 @@ export interface Translations {
     appVersion: (version: string) => string;
     languageLabel: string;
     languageHelper: string;
+    debugMode: string;
+    debugDescription: string;
+    debugTitle: string;
+    debugEmpty: string;
+    clearDebug: string;
+    testApi: string;
+    testNetwork: string;
+    networkTesting: string;
+    networkSuccess: (code: number) => string;
+    networkFailed: (reason: string) => string;
   };
 }
 
@@ -106,10 +120,14 @@ const translations: Record<Language, Translations> = {
         ready: 'Ready to scan',
         detected: 'Code detected',
         sending: 'Sending…',
+        waitingLocation: 'Waiting for location…',
+        sendingWebhook: 'Sending webhook…',
         sent: (code) => `Sent${code ? ` · HTTP ${code}` : ''}`,
         failed: (reason) => `Webhook failed · ${reason}`,
       },
       locationStatuses: {
+        acquiring: 'Location: acquiring…',
+        ready: (accuracy) => `Location: ready${accuracy !== undefined ? ` · ± ${Math.round(accuracy)} m` : ''}`,
         unavailable: 'Location unavailable',
         'permission-denied': 'Location permission denied',
         timeout: 'Location request timed out',
@@ -156,7 +174,7 @@ const translations: Record<Language, Translations> = {
       testMissingUrl: 'Configure the webhook URL first.',
       testLocationUnavailable: 'Cannot test webhook: location unavailable.',
       testSendingStatus: 'Sending test payload…',
-      testSuccess: (code) => `Webhook responded with HTTP ${code ?? '200-299'}.`,
+      testSuccess: (code) => `Test successful · HTTP ${code ?? '2xx'}`,
       testFailed: (message) => `Webhook failed: ${message}`,
       testNoResponse: 'Webhook failed to respond.',
       privacyTitle: 'Privacy',
@@ -165,6 +183,16 @@ const translations: Record<Language, Translations> = {
       appVersion: (version) => `App version ${version}.`,
       languageLabel: 'Language',
       languageHelper: 'Set the language for the app interface.',
+      debugMode: 'Debug mode',
+      debugDescription: 'Show the last 50 scanner, location, and API events on this device.',
+      debugTitle: 'Debug log',
+      debugEmpty: 'No debug events yet.',
+      clearDebug: 'Clear debug log',
+      testApi: 'Test API',
+      testNetwork: 'Test network',
+      networkTesting: 'Testing API connectivity…',
+      networkSuccess: (code) => `API reachable · HTTP ${code}`,
+      networkFailed: (reason) => `API unreachable · ${reason}`,
     },
   },
   fr: {
@@ -180,10 +208,14 @@ const translations: Record<Language, Translations> = {
         ready: 'Prêt à scanner',
         detected: 'Code détecté',
         sending: 'Envoi…',
+        waitingLocation: 'Attente de la localisation…',
+        sendingWebhook: 'Envoi du webhook…',
         sent: (code) => `Envoyé${code ? ` · HTTP ${code}` : ''}`,
         failed: (reason) => `Échec webhook · ${reason}`,
       },
       locationStatuses: {
+        acquiring: 'Localisation : acquisition…',
+        ready: (accuracy) => `Localisation : prête${accuracy !== undefined ? ` · ± ${Math.round(accuracy)} m` : ''}`,
         unavailable: 'Localisation indisponible',
         'permission-denied': 'Autorisation de localisation refusée',
         timeout: 'Délai de localisation dépassé',
@@ -231,7 +263,7 @@ const translations: Record<Language, Translations> = {
       testMissingUrl: "Configurez d'abord l’URL du webhook.",
       testLocationUnavailable: 'Impossible de tester le webhook : localisation indisponible.',
       testSendingStatus: 'Envoi du payload de test…',
-      testSuccess: (code) => `Le webhook a répondu avec le HTTP ${code ?? '200-299'}.`,
+      testSuccess: (code) => `Test réussi · HTTP ${code ?? '2xx'}`,
       testFailed: (message) => `Le webhook a échoué : ${message}`,
       testNoResponse: "Le webhook n'a pas répondu.",
       privacyTitle: 'Confidentialité',
@@ -240,6 +272,16 @@ const translations: Record<Language, Translations> = {
       appVersion: (version) => `Version de l'application ${version}.`,
       languageLabel: 'Langue',
       languageHelper: "Choisissez la langue de l'interface.",
+      debugMode: 'Mode debug',
+      debugDescription: 'Afficher les 50 derniers événements du scanner, de localisation et API.',
+      debugTitle: 'Journal debug',
+      debugEmpty: 'Aucun événement debug.',
+      clearDebug: 'Effacer le journal debug',
+      testApi: "Tester l'API",
+      testNetwork: 'Tester le réseau',
+      networkTesting: 'Test de la connexion API…',
+      networkSuccess: (code) => `API accessible · HTTP ${code}`,
+      networkFailed: (reason) => `API inaccessible · ${reason}`,
     },
   },
   de: {
@@ -255,10 +297,14 @@ const translations: Record<Language, Translations> = {
         ready: 'Bereit zum Scannen',
         detected: 'Code erkannt',
         sending: 'Wird gesendet…',
+        waitingLocation: 'Standort wird ermittelt…',
+        sendingWebhook: 'Webhook wird gesendet…',
         sent: (code) => `Gesendet${code ? ` · HTTP ${code}` : ''}`,
         failed: (reason) => `Webhook fehlgeschlagen · ${reason}`,
       },
       locationStatuses: {
+        acquiring: 'Standort: wird ermittelt…',
+        ready: (accuracy) => `Standort: bereit${accuracy !== undefined ? ` · ± ${Math.round(accuracy)} m` : ''}`,
         unavailable: 'Standort nicht verfügbar',
         'permission-denied': 'Standortberechtigung verweigert',
         timeout: 'Zeitüberschreitung bei der Standortabfrage',
@@ -305,7 +351,7 @@ const translations: Record<Language, Translations> = {
       testMissingUrl: 'Konfigurieren Sie zuerst die Webhook-URL.',
       testLocationUnavailable: 'Webhook kann nicht getestet werden: Standort nicht verfügbar.',
       testSendingStatus: 'Test-Payload wird gesendet…',
-      testSuccess: (code) => `Webhook antwortete mit HTTP ${code ?? '200-299'}.`,
+      testSuccess: (code) => `Test erfolgreich · HTTP ${code ?? '2xx'}`,
       testFailed: (message) => `Webhook fehlgeschlagen: ${message}`,
       testNoResponse: 'Webhook hat nicht geantwortet.',
       privacyTitle: 'Datenschutz',
@@ -314,6 +360,16 @@ const translations: Record<Language, Translations> = {
       appVersion: (version) => `App-Version ${version}.`,
       languageLabel: 'Sprache',
       languageHelper: 'Sprache der Benutzeroberfläche festlegen.',
+      debugMode: 'Debug-Modus',
+      debugDescription: 'Die letzten 50 Scanner-, Standort- und API-Ereignisse anzeigen.',
+      debugTitle: 'Debug-Protokoll',
+      debugEmpty: 'Noch keine Debug-Ereignisse.',
+      clearDebug: 'Debug-Protokoll löschen',
+      testApi: 'API testen',
+      testNetwork: 'Netzwerk testen',
+      networkTesting: 'API-Verbindung wird getestet…',
+      networkSuccess: (code) => `API erreichbar · HTTP ${code}`,
+      networkFailed: (reason) => `API nicht erreichbar · ${reason}`,
     },
   },
 };
