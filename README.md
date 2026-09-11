@@ -1,6 +1,6 @@
 # Barcode Scanner (Web PWA)
 
-This repository hosts a two-tab progressive web app (PWA) that scans barcodes/QR codes, routes payloads to one of two secured webhooks, and keeps a same-day history. The UI follows the clean, light aesthetic of labo.lu. Current version: **0.3.2**.
+This repository hosts a two-tab progressive web app (PWA) that scans barcodes/QR codes, routes payloads to one of two secured webhooks, and keeps a same-day history. The UI follows the clean, light aesthetic of labo.lu. Current version: **0.3.3**.
 
 ## Features
 - ZXing-powered camera scanning with permission handling.
@@ -9,6 +9,10 @@ This repository hosts a two-tab progressive web app (PWA) that scans barcodes/QR
 - Mobile-first responsive layout tuned for phones, plus installable PWA with offline shell via service worker.
 
 ## Changelog
+
+### 0.3.3
+- Added geolocation metadata to successful barcode scans.
+- Added graceful handling for unavailable or denied location access.
 
 ### 0.3.2
 - Improved barcode detection reliability on iOS/WebKit.

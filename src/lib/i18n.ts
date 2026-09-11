@@ -33,6 +33,12 @@ export interface Translations {
       sent: string;
       failed: string;
     };
+    locationStatuses: {
+      unavailable: string;
+      'permission-denied': string;
+      timeout: string;
+      unsupported: string;
+    };
     empty: string;
     waitMessage: (ms: number) => string;
     clearConfirmTitle: string;
@@ -100,6 +106,12 @@ const translations: Record<Language, Translations> = {
         sent: 'Sent',
         failed: 'Scanned, but sending failed',
       },
+      locationStatuses: {
+        unavailable: 'Location unavailable',
+        'permission-denied': 'Location permission denied',
+        timeout: 'Location request timed out',
+        unsupported: 'Location is not supported on this device',
+      },
       empty: 'No scans yet today.',
       waitMessage: (ms) => `Please wait ${ms} ms before scanning again.`,
       clearConfirmTitle: 'Confirm clear',
@@ -145,7 +157,7 @@ const translations: Record<Language, Translations> = {
       testNoResponse: 'Webhook failed to respond.',
       privacyTitle: 'Privacy',
       privacyCopy:
-        'All configuration and scan history stay on this device in local storage. Header values are never logged or sent anywhere except your configured webhook.',
+        'All configuration, scan history, and location metadata stay on this device in local storage. Location is not sent to webhooks. Header values are only sent to your configured webhook.',
       appVersion: (version) => `App version ${version}.`,
       languageLabel: 'Language',
       languageHelper: 'Set the language for the app interface.',
@@ -165,6 +177,12 @@ const translations: Record<Language, Translations> = {
         detected: 'Code détecté',
         sent: 'Envoyé',
         failed: "Scanné, mais l'envoi a échoué",
+      },
+      locationStatuses: {
+        unavailable: 'Localisation indisponible',
+        'permission-denied': 'Autorisation de localisation refusée',
+        timeout: 'Délai de localisation dépassé',
+        unsupported: "La localisation n'est pas prise en charge sur cet appareil",
       },
       empty: "Aucun scan aujourd'hui.",
       waitMessage: (ms) => `Merci de patienter ${ms} ms avant de scanner à nouveau.`,
@@ -212,7 +230,7 @@ const translations: Record<Language, Translations> = {
       testNoResponse: "Le webhook n'a pas répondu.",
       privacyTitle: 'Confidentialité',
       privacyCopy:
-        "Toute la configuration et l'historique des scans restent sur cet appareil dans le stockage local. Les valeurs des en-têtes ne sont jamais journalisées ni envoyées ailleurs que vers votre webhook configuré.",
+        "La configuration, l'historique et les localisations restent sur cet appareil. La localisation n'est pas envoyée aux webhooks. Les en-têtes sont uniquement envoyés à votre webhook configuré.",
       appVersion: (version) => `Version de l'application ${version}.`,
       languageLabel: 'Langue',
       languageHelper: "Choisissez la langue de l'interface.",
@@ -232,6 +250,12 @@ const translations: Record<Language, Translations> = {
         detected: 'Code erkannt',
         sent: 'Gesendet',
         failed: 'Gescannt, aber Senden fehlgeschlagen',
+      },
+      locationStatuses: {
+        unavailable: 'Standort nicht verfügbar',
+        'permission-denied': 'Standortberechtigung verweigert',
+        timeout: 'Zeitüberschreitung bei der Standortabfrage',
+        unsupported: 'Standort wird auf diesem Gerät nicht unterstützt',
       },
       empty: 'Heute noch keine Scans.',
       waitMessage: (ms) => `Bitte ${ms} ms warten, bevor erneut gescannt wird.`,
@@ -278,7 +302,7 @@ const translations: Record<Language, Translations> = {
       testNoResponse: 'Webhook hat nicht geantwortet.',
       privacyTitle: 'Datenschutz',
       privacyCopy:
-        'Alle Einstellungen und der Scanverlauf bleiben lokal auf diesem Gerät. Header-Werte werden niemals protokolliert oder woandershin gesendet als zu Ihrem konfigurierten Webhook.',
+        'Einstellungen, Scanverlauf und Standortdaten bleiben lokal auf diesem Gerät. Standortdaten werden nicht an Webhooks gesendet. Header werden nur an den konfigurierten Webhook gesendet.',
       appVersion: (version) => `App-Version ${version}.`,
       languageLabel: 'Sprache',
       languageHelper: 'Sprache der Benutzeroberfläche festlegen.',

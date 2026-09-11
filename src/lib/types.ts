@@ -20,6 +20,15 @@ export interface WebhookConfig {
 
 export type DeliveryStatus = 'pending' | 'sent' | 'failed';
 
+export interface ScanLocation {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  timestamp?: number;
+}
+
+export type LocationStatus = 'available' | 'unavailable' | 'permission-denied' | 'timeout' | 'unsupported';
+
 export interface ScanRecord {
   id: string;
   text: string;
@@ -28,4 +37,7 @@ export interface ScanRecord {
   status: DeliveryStatus;
   responseCode?: number;
   error?: string;
+  /** Optional for backward compatibility with history saved before v0.3.3. */
+  location?: ScanLocation;
+  locationStatus?: LocationStatus;
 }

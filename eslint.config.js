@@ -27,6 +27,8 @@ export default [
         DOMException: 'readonly',
         fetch: 'readonly',
         Headers: 'readonly',
+        GeolocationPosition: 'readonly',
+        GeolocationPositionError: 'readonly',
         HTMLElement: 'readonly',
         HTMLMediaElement: 'readonly',
         HTMLVideoElement: 'readonly',
