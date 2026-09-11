@@ -9,6 +9,8 @@ services:
 
   https-proxy:
     image: nginx:1.27-alpine
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       barscan:
         condition: service_healthy

@@ -119,6 +119,74 @@ detect a process already listening on port 443.
 Do not commit anything from `certs/`, `rootCA.pem`, `rootCA-key.pem`, or any private
 key. Do not disable TLS validation: iOS must explicitly trust the mkcert root CA.
 
+### Local backend through the HTTPS proxy
+
+When the Barscan backend runs separately on the Windows host at
+`http://192.168.1.186:8000`, an HTTPS page must not call that HTTP URL directly:
+the browser would block it as mixed content. The existing `https-proxy` therefore
+provides same-origin routes and reaches the host through Docker Desktop's
+`host.docker.internal` hostname:
+
+```text
+iPhone / Android
+        |
+        | HTTPS
+        v
+https://192.168.1.186
+        |
+        v
+nginx https-proxy
+        |
+        | /api/scan
+        v
+http://host.docker.internal:8000/scan
+        |
+        v
+Barscan Backend
+```
+
+Start the backend from its own repository/Compose stack and ensure that it is
+published on the Windows host's port `8000`. This repository does not start or
+modify that backend. The proxy exposes these exact mappings:
+
+| Browser URL | Backend target |
+| --- | --- |
+| `/api/scan` | `http://host.docker.internal:8000/scan` |
+| `/api/healthz` | `http://host.docker.internal:8000/healthz` |
+
+In the PWA webhook settings, prefer the same-origin relative URL `/api/scan`.
+The current settings field and `fetch` implementation accept relative URLs. The
+absolute URL `https://192.168.1.186/api/scan` is also valid. Do not configure the
+PWA with `http://192.168.1.186:8000/scan`, because that reintroduces mixed content.
+
+The proxy preserves standard nginx access/error logs and forwards upstream
+failures as-is. If the backend is stopped or unreachable, the API route returns
+HTTP `502`; it is never replaced with a synthetic success response.
+
+After both stacks are running, validate the backend through TLS from PowerShell:
+
+```powershell
+Invoke-RestMethod `
+    -Uri "https://192.168.1.186/api/healthz" `
+    -Method Get
+
+$body = @{
+    barcode = "TEST123"
+    latitude = 49.123456
+    longitude = 6.123456
+    accuracy = 10
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Uri "https://192.168.1.186/api/scan" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body $body
+```
+
+The health response should be `{ "status": "ok" }`. After the POST test, verify
+that the backend has appended a line to its own `data/scans.log`.
+
 ### Notes
 - Scan history and both webhook settings stay on-device in `localStorage`.
 - For GET webhooks, only headers are sent to avoid leaking data in query strings.
