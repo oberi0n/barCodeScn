@@ -1,12 +1,20 @@
 # Barcode Scanner (Web PWA)
 
-This repository hosts a two-tab progressive web app (PWA) that scans barcodes/QR codes, routes payloads to one of two secured webhooks, and keeps a same-day history. The UI follows the clean, light aesthetic of labo.lu. Current version: **0.3.1**.
+This repository hosts a two-tab progressive web app (PWA) that scans barcodes/QR codes, routes payloads to one of two secured webhooks, and keeps a same-day history. The UI follows the clean, light aesthetic of labo.lu. Current version: **0.3.2**.
 
 ## Features
 - ZXing-powered camera scanning with permission handling.
 - Daily history scoped to the current day (older entries are auto-pruned).
 - Two independently configurable webhooks (URL, verb and custom headers). A comma-separated list of ZXing formats is routed to webhook 1; every other format is routed to webhook 2. Built-in test actions verify both endpoints.
 - Mobile-first responsive layout tuned for phones, plus installable PWA with offline shell via service worker.
+
+## Changelog
+
+### 0.3.2
+- Improved barcode detection reliability on iOS/WebKit.
+- Added explicit visual feedback after barcode detection.
+- Added webhook delivery status feedback.
+- Added optional scan confirmation sound/haptic feedback.
 
 ## Project structure
 - `src/App.tsx` – two-tab UI for scanning/history and settings.

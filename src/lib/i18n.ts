@@ -27,6 +27,12 @@ export interface Translations {
       pending: string;
       failed: string;
     };
+    feedback: {
+      ready: string;
+      detected: string;
+      sent: string;
+      failed: string;
+    };
     empty: string;
     waitMessage: (ms: number) => string;
     clearConfirmTitle: string;
@@ -88,6 +94,12 @@ const translations: Record<Language, Translations> = {
       stop: 'Stop camera',
       table: { value: 'Value', format: 'Format', time: 'Time', status: 'Status' },
       statuses: { sent: 'Sent', pending: 'Pending', failed: 'Failed' },
+      feedback: {
+        ready: 'Ready to scan',
+        detected: 'Code detected',
+        sent: 'Sent',
+        failed: 'Scanned, but sending failed',
+      },
       empty: 'No scans yet today.',
       waitMessage: (ms) => `Please wait ${ms} ms before scanning again.`,
       clearConfirmTitle: 'Confirm clear',
@@ -148,6 +160,12 @@ const translations: Record<Language, Translations> = {
       stop: 'Arrêter la caméra',
       table: { value: 'Valeur', format: 'Format', time: 'Heure', status: 'Statut' },
       statuses: { sent: 'Envoyé', pending: 'En attente', failed: 'Échec' },
+      feedback: {
+        ready: 'Prêt à scanner',
+        detected: 'Code détecté',
+        sent: 'Envoyé',
+        failed: "Scanné, mais l'envoi a échoué",
+      },
       empty: "Aucun scan aujourd'hui.",
       waitMessage: (ms) => `Merci de patienter ${ms} ms avant de scanner à nouveau.`,
       clearConfirmTitle: 'Confirmer la suppression',
@@ -209,6 +227,12 @@ const translations: Record<Language, Translations> = {
       stop: 'Kamera stoppen',
       table: { value: 'Wert', format: 'Format', time: 'Zeit', status: 'Status' },
       statuses: { sent: 'Gesendet', pending: 'Ausstehend', failed: 'Fehlgeschlagen' },
+      feedback: {
+        ready: 'Bereit zum Scannen',
+        detected: 'Code erkannt',
+        sent: 'Gesendet',
+        failed: 'Gescannt, aber Senden fehlgeschlagen',
+      },
       empty: 'Heute noch keine Scans.',
       waitMessage: (ms) => `Bitte ${ms} ms warten, bevor erneut gescannt wird.`,
       clearConfirmTitle: 'Löschen bestätigen',

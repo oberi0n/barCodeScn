@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Scanner } from './components/Scanner';
+import { ScanFeedback, Scanner } from './components/Scanner';
 import { usePersistentState } from './hooks/usePersistentState';
 import { AVAILABLE_LANGUAGES, Language, getTranslations } from './lib/i18n';
 import { HttpMethod, ScanRecord, WebhookConfig, WebhookTarget } from './lib/types';
@@ -63,15 +63,19 @@ export default function App() {
   const [config, setConfig] = usePersistentState<WebhookConfig>('webhook-config', createBlankConfig());
   const [language, setLanguage] = usePersistentState<Language>('language', 'en');
   const [scannerActive, setScannerActive] = useState(false);
+  const [scanFeedback, setScanFeedback] = useState<ScanFeedback | null>(null);
   const sendingRef = useRef(false);
   const lastScanAtRef = useRef<number | null>(null);
+  const feedbackTimerRef = useRef<number | null>(null);
+  const feedbackSequenceRef = useRef(0);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const todayHistory = useMemo(() => filterToday(history), [history]);
   const [lastError, setLastError] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const APP_VERSION = '0.3.1';
+  const APP_VERSION = '0.3.2';
   const scannerSectionRef = useRef<HTMLElement | null>(null);
   const t = useMemo(() => getTranslations(language), [language]);
 
@@ -119,6 +123,11 @@ export default function App() {
     return () => document.body.classList.remove('no-scroll');
   }, [scannerActive]);
 
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
   useEffect(() => {
     const modalOpen = showResetConfirm || showClearConfirm;
     document.body.classList.toggle('modal-open', modalOpen);
@@ -135,14 +144,44 @@ export default function App() {
     }
   }, [scannerActive]);
 
-  const handleScan = async (text: string, format: string) => {
-    if (sendingRef.current) return;
+  const playConfirmation = () => {
+    const context = audioContextRef.current;
+    if (context) {
+      void context.resume().then(() => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.frequency.value = 880;
+        gain.gain.setValueAtTime(0.05, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.09);
+        oscillator.connect(gain).connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.1);
+      }).catch(() => undefined);
+    }
+    navigator.vibrate?.(80);
+  };
+
+  const prepareAudio = () => {
+    if (!audioContextRef.current) {
+      const AudioContextConstructor = window.AudioContext ??
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextConstructor) audioContextRef.current = new AudioContextConstructor();
+    }
+    void audioContextRef.current?.resume().catch(() => undefined);
+  };
+
+  const toggleScanner = () => {
+    if (!scannerActive) prepareAudio();
+    else setScanFeedback(null);
+    setScannerActive((previous) => !previous);
+  };
+
+  const handleScan = (text: string, format: string) => {
+    if (sendingRef.current) return false;
 
     const now = Date.now();
     if (lastScanAtRef.current && now - lastScanAtRef.current < Math.max(0, config.pauseMs)) {
-      const remaining = Math.max(0, config.pauseMs - (now - lastScanAtRef.current));
-      setLastError(t.scanner.waitMessage(remaining));
-      return;
+      return false;
     }
 
     lastScanAtRef.current = now;
@@ -158,16 +197,32 @@ export default function App() {
     setHistory((prev) => pruneToToday([record, ...prev]));
     sendingRef.current = true;
     setLastError(null);
+    const sequence = ++feedbackSequenceRef.current;
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    setScanFeedback({ phase: 'detected', text, format });
+    playConfirmation();
 
-    const result = await sendWebhook({ ...record }, selectWebhook(config, format));
-    setHistory((prev) =>
-      prev.map((item) =>
-        item.id === record.id
-          ? { ...item, status: result.status, responseCode: result.responseCode, error: result.error }
-          : item,
-      ),
-    );
-    sendingRef.current = false;
+    void (async () => {
+      const [result] = await Promise.all([
+        sendWebhook({ ...record }, selectWebhook(config, format)),
+        new Promise((resolve) => window.setTimeout(resolve, 1000)),
+      ]);
+      setHistory((prev) =>
+        prev.map((item) =>
+          item.id === record.id
+            ? { ...item, status: result.status, responseCode: result.responseCode, error: result.error }
+            : item,
+        ),
+      );
+      sendingRef.current = false;
+      if (feedbackSequenceRef.current !== sequence) return;
+      setScanFeedback({ phase: result.status === 'sent' ? 'sent' : 'failed', text, format });
+      feedbackTimerRef.current = window.setTimeout(() => {
+        if (feedbackSequenceRef.current === sequence) setScanFeedback(null);
+      }, Math.max(1200, config.pauseMs - 1000));
+    })();
+
+    return true;
   };
 
   const updateConfig = (value: Partial<WebhookConfig>) => {
@@ -282,7 +337,7 @@ export default function App() {
               <button className="button secondary" onClick={clearHistory} disabled={!history.length}>
                 {t.scanner.clearToday}
               </button>
-              <button className="button" onClick={() => setScannerActive((prev) => !prev)}>
+              <button className="button" onClick={toggleScanner}>
                 {scannerActive ? t.scanner.stop : t.scanner.start}
               </button>
             </div>
@@ -293,6 +348,8 @@ export default function App() {
               active={scannerActive}
               onScan={handleScan}
               onError={setLastError}
+              feedback={scanFeedback}
+              labels={t.scanner.feedback}
               messages={t.scanner.cameraErrors}
             />
           ) : null}
