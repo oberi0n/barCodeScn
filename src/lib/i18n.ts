@@ -48,6 +48,9 @@ export interface Translations {
     resetCancel: string;
     urlLabel: string;
     urlPlaceholder: string;
+    webhookName: (number: number) => string;
+    primaryFormatsLabel: string;
+    primaryFormatsNote: string;
     methodLabel: string;
     methodNote: string;
     pauseLabel: string;
@@ -106,6 +109,9 @@ const translations: Record<Language, Translations> = {
       resetCancel: 'Keep my settings',
       urlLabel: 'Webhook URL',
       urlPlaceholder: 'https://example.com/webhook',
+      webhookName: (number) => `Webhook ${number}`,
+      primaryFormatsLabel: 'Formats sent to webhook 1',
+      primaryFormatsNote: 'Comma-separated ZXing formats (for example QR_CODE). All other formats go to webhook 2.',
       methodLabel: 'HTTP verb',
       methodNote: 'If using GET, only headers are sent to protect query strings.',
       pauseLabel: 'Pause between scans',
@@ -163,6 +169,9 @@ const translations: Record<Language, Translations> = {
       resetCancel: 'Conserver mes réglages',
       urlLabel: 'URL du webhook',
       urlPlaceholder: 'https://exemple.com/webhook',
+      webhookName: (number) => `Webhook ${number}`,
+      primaryFormatsLabel: 'Formats envoyés au webhook 1',
+      primaryFormatsNote: 'Formats ZXing séparés par des virgules (par ex. QR_CODE). Tous les autres vont au webhook 2.',
       methodLabel: 'Verbe HTTP',
       methodNote:
         "Avec GET, seuls les en-têtes sont envoyés afin de protéger les chaînes de requête.",
@@ -221,6 +230,9 @@ const translations: Record<Language, Translations> = {
       resetCancel: 'Einstellungen behalten',
       urlLabel: 'Webhook-URL',
       urlPlaceholder: 'https://beispiel.de/webhook',
+      webhookName: (number) => `Webhook ${number}`,
+      primaryFormatsLabel: 'Formate für Webhook 1',
+      primaryFormatsNote: 'Kommagetrennte ZXing-Formate (z. B. QR_CODE). Alle anderen Formate gehen an Webhook 2.',
       methodLabel: 'HTTP-Verb',
       methodNote: 'Bei GET werden nur Header gesendet, um Query-Strings zu schützen.',
       pauseLabel: 'Pause zwischen Scans',

@@ -5,10 +5,16 @@ export interface WebhookHeader {
   value: string;
 }
 
-export interface WebhookConfig {
+export interface WebhookTarget {
   url: string;
   method: HttpMethod;
   headers: WebhookHeader[];
+}
+
+export interface WebhookConfig {
+  webhooks: [WebhookTarget, WebhookTarget];
+  /** Formats routed to the first webhook. Every other format uses the second. */
+  primaryFormats: string[];
   pauseMs: number;
 }
 

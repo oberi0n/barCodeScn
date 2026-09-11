@@ -1,4 +1,4 @@
-import { DeliveryStatus, ScanRecord, WebhookConfig } from './types';
+import { DeliveryStatus, ScanRecord, WebhookTarget } from './types';
 
 interface SendResult {
   status: DeliveryStatus;
@@ -8,7 +8,7 @@ interface SendResult {
 
 export async function sendWebhook(
   payload: Omit<ScanRecord, 'status'>,
-  config: WebhookConfig,
+  config: WebhookTarget,
 ): Promise<SendResult> {
   if (!config.url) {
     return { status: 'failed', error: 'Webhook URL not configured' };
