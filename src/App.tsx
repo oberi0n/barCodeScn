@@ -93,7 +93,7 @@ export default function App() {
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const APP_VERSION = '0.3.3';
+  const APP_VERSION = '0.3.4';
   const scannerSectionRef = useRef<HTMLElement | null>(null);
   const t = useMemo(() => getTranslations(language), [language]);
 
@@ -139,6 +139,43 @@ export default function App() {
   useEffect(() => {
     document.body.classList.toggle('no-scroll', scannerActive);
     return () => document.body.classList.remove('no-scroll');
+  }, [scannerActive]);
+
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
+  useEffect(() => {
+    if (!scannerActive) return undefined;
+    if (!('geolocation' in navigator)) {
+      locationStatusRef.current = 'unsupported';
+      setLocationStatus('unsupported');
+      return undefined;
+    }
+
+    let active = true;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (!active) return;
+        latestLocationRef.current = locationFromPosition(position);
+        locationStatusRef.current = 'available';
+        setLocationStatus('available');
+      },
+      (error) => {
+        if (!active) return;
+        const status = locationStatusFromError(error);
+        if (status === 'permission-denied') latestLocationRef.current = null;
+        locationStatusRef.current = status;
+        setLocationStatus(status);
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
+    );
+
+    return () => {
+      active = false;
+      navigator.geolocation.clearWatch(watchId);
+    };
   }, [scannerActive]);
 
   useEffect(() => () => {
@@ -269,10 +306,16 @@ export default function App() {
   };
 
   const handleScan = (text: string, format: string) => {
-    if (sendingRef.current) return false;
+    if (sendingRef.current) {
+      console.info('[scan] ignored: webhook already in progress', { text, format });
+      return false;
+    }
 
     const now = Date.now();
     if (lastScanAtRef.current && now - lastScanAtRef.current < Math.max(0, config.pauseMs)) {
+      const remaining = Math.max(0, config.pauseMs - (now - lastScanAtRef.current));
+      console.info('[scan] ignored: pause active', { text, format, remainingMs: remaining });
+      setLastError(t.scanner.waitMessage(remaining));
       return false;
     }
 
@@ -291,6 +334,7 @@ export default function App() {
       location: recentLocation,
       locationStatus: recentLocation ? 'available' : locationStatusRef.current,
     };
+    console.info('[scan] accepted', { text, format });
 
     setHistory((prev) => pruneToToday([record, ...prev]));
     sendingRef.current = true;
@@ -300,41 +344,53 @@ export default function App() {
     setScanFeedback({ phase: 'detected', text, format });
     playConfirmation();
 
-    if (!recentLocation && 'geolocation' in navigator && locationStatusRef.current !== 'permission-denied') {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = locationFromPosition(position);
-          latestLocationRef.current = location;
-          locationStatusRef.current = 'available';
-          setLocationStatus('available');
-          setHistory((previous) => previous.map((item) =>
-            item.id === record.id ? { ...item, location, locationStatus: 'available' } : item,
-          ));
-        },
-        (error) => {
-          const status = locationStatusFromError(error);
-          const cachedLocation = latestLocationRef.current;
-          const hasRecentLocation = Boolean(
-            cachedLocation?.timestamp && Date.now() - cachedLocation.timestamp <= 30000,
-          );
-          if (!hasRecentLocation) {
-            locationStatusRef.current = status;
-            setLocationStatus(status);
+    const locationPromise = recentLocation
+      ? Promise.resolve<ScanLocation | null>(recentLocation)
+      : new Promise<ScanLocation | null>((resolve) => {
+          if (!('geolocation' in navigator) || locationStatusRef.current === 'permission-denied') {
+            resolve(null);
+            return;
           }
-          setHistory((previous) => previous.map((item) => {
-            if (item.id !== record.id || item.location) return item;
-            return hasRecentLocation && cachedLocation
-              ? { ...item, location: { ...cachedLocation }, locationStatus: 'available' }
-              : { ...item, locationStatus: status };
-          }));
-        },
-        { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
-      );
-    }
+
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const location = locationFromPosition(position);
+              latestLocationRef.current = location;
+              locationStatusRef.current = 'available';
+              setLocationStatus('available');
+              setHistory((previous) => previous.map((item) =>
+                item.id === record.id ? { ...item, location, locationStatus: 'available' } : item,
+              ));
+              resolve(location);
+            },
+            (error) => {
+              const status = locationStatusFromError(error);
+              const cachedLocation = latestLocationRef.current;
+              const hasRecentLocation = Boolean(
+                cachedLocation?.timestamp && Date.now() - cachedLocation.timestamp <= 30000,
+              );
+              if (!hasRecentLocation) {
+                locationStatusRef.current = status;
+                setLocationStatus(status);
+              }
+              setHistory((previous) => previous.map((item) => {
+                if (item.id !== record.id || item.location) return item;
+                return hasRecentLocation && cachedLocation
+                  ? { ...item, location: { ...cachedLocation }, locationStatus: 'available' }
+                  : { ...item, locationStatus: status };
+              }));
+              resolve(hasRecentLocation ? cachedLocation : null);
+            },
+            { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
+          );
+        });
 
     void (async () => {
+      const webhookLocation = await locationPromise;
+      const target = selectWebhook(config, format);
+      console.info('[scan] invoking webhook');
       const [result] = await Promise.all([
-        sendWebhook({ ...record }, selectWebhook(config, format)),
+        sendWebhook({ ...record, location: webhookLocation ?? undefined }, target),
         new Promise((resolve) => window.setTimeout(resolve, 1000)),
       ]);
       setHistory((prev) =>
@@ -346,7 +402,13 @@ export default function App() {
       );
       sendingRef.current = false;
       if (feedbackSequenceRef.current !== sequence) return;
-      setScanFeedback({ phase: result.status === 'sent' ? 'sent' : 'failed', text, format });
+      setScanFeedback({
+        phase: result.status === 'sent' ? 'sent' : 'failed',
+        text,
+        format,
+        responseCode: result.responseCode,
+        error: result.error,
+      });
       feedbackTimerRef.current = window.setTimeout(() => {
         if (feedbackSequenceRef.current === sequence) setScanFeedback(null);
       }, Math.max(1200, config.pauseMs - 1000));
@@ -412,13 +474,18 @@ export default function App() {
       setWebhookStatus(t.settings.testMissingUrl);
       return;
     }
+    const location = latestLocationRef.current;
+    if (!location || !Number.isFinite(location.latitude) || !Number.isFinite(location.longitude)) {
+      setWebhookStatus(t.settings.testLocationUnavailable);
+      return;
+    }
 
     setTestingWebhook(true);
     setWebhookStatus(t.settings.testSendingStatus);
 
     const now = new Date().toISOString();
     const result = await sendWebhook(
-      { id: `test-${now}`, text: 'Test barcode', format: 'TEST', scannedAt: now },
+      { id: `test-${now}`, text: 'Test barcode', format: 'TEST', scannedAt: now, location },
       target,
     );
 
@@ -526,6 +593,7 @@ export default function App() {
                           {item.status === 'failed' && t.scanner.statuses.failed}
                           {item.responseCode ? ` · ${item.responseCode}` : ''}
                         </span>
+                        {item.error ? <span className="history-error">{item.error}</span> : null}
                       </td>
                     </tr>
                   ))

@@ -515,6 +515,14 @@ th {
   white-space: nowrap;
 }
 
+.history-error {
+  display: block;
+  margin-top: 0.2rem;
+  color: #c11a36;
+  font-size: 0.76rem;
+  line-height: 1.25;
+}
+
 .version-inline {
   font-weight: 700;
   color: #1f2a44;

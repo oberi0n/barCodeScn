@@ -5,6 +5,8 @@ export interface ScanFeedback {
   phase: 'detected' | 'sent' | 'failed';
   text: string;
   format: string;
+  responseCode?: number;
+  error?: string;
 }
 
 interface ScannerProps {
@@ -15,8 +17,9 @@ interface ScannerProps {
   labels: {
     ready: string;
     detected: string;
-    sent: string;
-    failed: string;
+    sending: string;
+    sent: (code?: number) => string;
+    failed: (reason: string) => string;
   };
   messages: {
     insecure: string;
@@ -182,12 +185,15 @@ export function Scanner({ active, onScan, onError, feedback, labels, messages }:
     return stop;
   }, [active, messages.insecure, messages.startFailed, messages.unsupported]);
 
+  const visibleError = feedback?.error === 'Location unavailable - webhook not sent'
+    ? 'Location unavailable'
+    : feedback?.error;
   const feedbackTitle = feedback
     ? feedback.phase === 'detected'
       ? labels.detected
       : feedback.phase === 'sent'
-        ? labels.sent
-        : labels.failed
+        ? labels.sent(feedback.responseCode)
+        : labels.failed(visibleError ?? 'Unknown error')
     : labels.ready;
 
   return (
@@ -199,6 +205,7 @@ export function Scanner({ active, onScan, onError, feedback, labels, messages }:
           <strong>{feedback ? (feedback.phase === 'failed' ? '⚠' : '✓') : '●'} {feedbackTitle}</strong>
           {feedback ? <span className="scan-feedback-value">{feedback.text}</span> : null}
           {feedback ? <span>{feedback.format.replaceAll('_', '-')}</span> : null}
+          {feedback?.phase === 'detected' ? <span>{labels.sending}</span> : null}
         </div>
       </div>
       {permissionError ? <p className="small-note">{permissionError}</p> : null}

@@ -30,8 +30,9 @@ export interface Translations {
     feedback: {
       ready: string;
       detected: string;
-      sent: string;
-      failed: string;
+      sending: string;
+      sent: (code?: number) => string;
+      failed: (reason: string) => string;
     };
     locationStatuses: {
       unavailable: string;
@@ -78,6 +79,7 @@ export interface Translations {
     testSend: string;
     testSending: string;
     testMissingUrl: string;
+    testLocationUnavailable: string;
     testSendingStatus: string;
     testSuccess: (code?: number) => string;
     testFailed: (message: string) => string;
@@ -103,8 +105,9 @@ const translations: Record<Language, Translations> = {
       feedback: {
         ready: 'Ready to scan',
         detected: 'Code detected',
-        sent: 'Sent',
-        failed: 'Scanned, but sending failed',
+        sending: 'Sending…',
+        sent: (code) => `Sent${code ? ` · HTTP ${code}` : ''}`,
+        failed: (reason) => `Webhook failed · ${reason}`,
       },
       locationStatuses: {
         unavailable: 'Location unavailable',
@@ -151,6 +154,7 @@ const translations: Record<Language, Translations> = {
       testSend: 'Send test',
       testSending: 'Testing…',
       testMissingUrl: 'Configure the webhook URL first.',
+      testLocationUnavailable: 'Cannot test webhook: location unavailable.',
       testSendingStatus: 'Sending test payload…',
       testSuccess: (code) => `Webhook responded with HTTP ${code ?? '200-299'}.`,
       testFailed: (message) => `Webhook failed: ${message}`,
@@ -175,8 +179,9 @@ const translations: Record<Language, Translations> = {
       feedback: {
         ready: 'Prêt à scanner',
         detected: 'Code détecté',
-        sent: 'Envoyé',
-        failed: "Scanné, mais l'envoi a échoué",
+        sending: 'Envoi…',
+        sent: (code) => `Envoyé${code ? ` · HTTP ${code}` : ''}`,
+        failed: (reason) => `Échec webhook · ${reason}`,
       },
       locationStatuses: {
         unavailable: 'Localisation indisponible',
@@ -224,6 +229,7 @@ const translations: Record<Language, Translations> = {
       testSend: 'Envoyer un test',
       testSending: 'Test en cours…',
       testMissingUrl: "Configurez d'abord l’URL du webhook.",
+      testLocationUnavailable: 'Impossible de tester le webhook : localisation indisponible.',
       testSendingStatus: 'Envoi du payload de test…',
       testSuccess: (code) => `Le webhook a répondu avec le HTTP ${code ?? '200-299'}.`,
       testFailed: (message) => `Le webhook a échoué : ${message}`,
@@ -248,8 +254,9 @@ const translations: Record<Language, Translations> = {
       feedback: {
         ready: 'Bereit zum Scannen',
         detected: 'Code erkannt',
-        sent: 'Gesendet',
-        failed: 'Gescannt, aber Senden fehlgeschlagen',
+        sending: 'Wird gesendet…',
+        sent: (code) => `Gesendet${code ? ` · HTTP ${code}` : ''}`,
+        failed: (reason) => `Webhook fehlgeschlagen · ${reason}`,
       },
       locationStatuses: {
         unavailable: 'Standort nicht verfügbar',
@@ -296,6 +303,7 @@ const translations: Record<Language, Translations> = {
       testSend: 'Test senden',
       testSending: 'Test wird gesendet…',
       testMissingUrl: 'Konfigurieren Sie zuerst die Webhook-URL.',
+      testLocationUnavailable: 'Webhook kann nicht getestet werden: Standort nicht verfügbar.',
       testSendingStatus: 'Test-Payload wird gesendet…',
       testSuccess: (code) => `Webhook antwortete mit HTTP ${code ?? '200-299'}.`,
       testFailed: (message) => `Webhook fehlgeschlagen: ${message}`,

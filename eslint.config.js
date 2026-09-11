@@ -10,7 +10,7 @@ export default [
   {
     files: ['public/**/*.js'],
     languageOptions: {
-      globals: { caches: 'readonly', fetch: 'readonly', self: 'readonly' },
+      globals: { caches: 'readonly', fetch: 'readonly', self: 'readonly', URL: 'readonly' },
     },
   },
   {
