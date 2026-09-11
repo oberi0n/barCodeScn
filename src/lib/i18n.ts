@@ -27,6 +27,19 @@ export interface Translations {
       pending: string;
       failed: string;
     };
+    feedback: {
+      ready: string;
+      detected: string;
+      sending: string;
+      sent: (code?: number) => string;
+      failed: (reason: string) => string;
+    };
+    locationStatuses: {
+      unavailable: string;
+      'permission-denied': string;
+      timeout: string;
+      unsupported: string;
+    };
     empty: string;
     waitMessage: (ms: number) => string;
     clearConfirmTitle: string;
@@ -48,6 +61,9 @@ export interface Translations {
     resetCancel: string;
     urlLabel: string;
     urlPlaceholder: string;
+    webhookName: (number: number) => string;
+    primaryFormatsLabel: string;
+    primaryFormatsNote: string;
     methodLabel: string;
     methodNote: string;
     pauseLabel: string;
@@ -63,6 +79,7 @@ export interface Translations {
     testSend: string;
     testSending: string;
     testMissingUrl: string;
+    testLocationUnavailable: string;
     testSendingStatus: string;
     testSuccess: (code?: number) => string;
     testFailed: (message: string) => string;
@@ -85,6 +102,19 @@ const translations: Record<Language, Translations> = {
       stop: 'Stop camera',
       table: { value: 'Value', format: 'Format', time: 'Time', status: 'Status' },
       statuses: { sent: 'Sent', pending: 'Pending', failed: 'Failed' },
+      feedback: {
+        ready: 'Ready to scan',
+        detected: 'Code detected',
+        sending: 'Sending…',
+        sent: (code) => `Sent${code ? ` · HTTP ${code}` : ''}`,
+        failed: (reason) => `Webhook failed · ${reason}`,
+      },
+      locationStatuses: {
+        unavailable: 'Location unavailable',
+        'permission-denied': 'Location permission denied',
+        timeout: 'Location request timed out',
+        unsupported: 'Location is not supported on this device',
+      },
       empty: 'No scans yet today.',
       waitMessage: (ms) => `Please wait ${ms} ms before scanning again.`,
       clearConfirmTitle: 'Confirm clear',
@@ -106,6 +136,9 @@ const translations: Record<Language, Translations> = {
       resetCancel: 'Keep my settings',
       urlLabel: 'Webhook URL',
       urlPlaceholder: 'https://example.com/webhook',
+      webhookName: (number) => `Webhook ${number}`,
+      primaryFormatsLabel: 'Formats sent to webhook 1',
+      primaryFormatsNote: 'Comma-separated ZXing formats (for example QR_CODE). All other formats go to webhook 2.',
       methodLabel: 'HTTP verb',
       methodNote: 'If using GET, only headers are sent to protect query strings.',
       pauseLabel: 'Pause between scans',
@@ -121,13 +154,14 @@ const translations: Record<Language, Translations> = {
       testSend: 'Send test',
       testSending: 'Testing…',
       testMissingUrl: 'Configure the webhook URL first.',
+      testLocationUnavailable: 'Cannot test webhook: location unavailable.',
       testSendingStatus: 'Sending test payload…',
       testSuccess: (code) => `Webhook responded with HTTP ${code ?? '200-299'}.`,
       testFailed: (message) => `Webhook failed: ${message}`,
       testNoResponse: 'Webhook failed to respond.',
       privacyTitle: 'Privacy',
       privacyCopy:
-        'All configuration and scan history stay on this device in local storage. Header values are never logged or sent anywhere except your configured webhook.',
+        'All configuration, scan history, and location metadata stay on this device in local storage. Location is not sent to webhooks. Header values are only sent to your configured webhook.',
       appVersion: (version) => `App version ${version}.`,
       languageLabel: 'Language',
       languageHelper: 'Set the language for the app interface.',
@@ -142,6 +176,19 @@ const translations: Record<Language, Translations> = {
       stop: 'Arrêter la caméra',
       table: { value: 'Valeur', format: 'Format', time: 'Heure', status: 'Statut' },
       statuses: { sent: 'Envoyé', pending: 'En attente', failed: 'Échec' },
+      feedback: {
+        ready: 'Prêt à scanner',
+        detected: 'Code détecté',
+        sending: 'Envoi…',
+        sent: (code) => `Envoyé${code ? ` · HTTP ${code}` : ''}`,
+        failed: (reason) => `Échec webhook · ${reason}`,
+      },
+      locationStatuses: {
+        unavailable: 'Localisation indisponible',
+        'permission-denied': 'Autorisation de localisation refusée',
+        timeout: 'Délai de localisation dépassé',
+        unsupported: "La localisation n'est pas prise en charge sur cet appareil",
+      },
       empty: "Aucun scan aujourd'hui.",
       waitMessage: (ms) => `Merci de patienter ${ms} ms avant de scanner à nouveau.`,
       clearConfirmTitle: 'Confirmer la suppression',
@@ -163,6 +210,9 @@ const translations: Record<Language, Translations> = {
       resetCancel: 'Conserver mes réglages',
       urlLabel: 'URL du webhook',
       urlPlaceholder: 'https://exemple.com/webhook',
+      webhookName: (number) => `Webhook ${number}`,
+      primaryFormatsLabel: 'Formats envoyés au webhook 1',
+      primaryFormatsNote: 'Formats ZXing séparés par des virgules (par ex. QR_CODE). Tous les autres vont au webhook 2.',
       methodLabel: 'Verbe HTTP',
       methodNote:
         "Avec GET, seuls les en-têtes sont envoyés afin de protéger les chaînes de requête.",
@@ -179,13 +229,14 @@ const translations: Record<Language, Translations> = {
       testSend: 'Envoyer un test',
       testSending: 'Test en cours…',
       testMissingUrl: "Configurez d'abord l’URL du webhook.",
+      testLocationUnavailable: 'Impossible de tester le webhook : localisation indisponible.',
       testSendingStatus: 'Envoi du payload de test…',
       testSuccess: (code) => `Le webhook a répondu avec le HTTP ${code ?? '200-299'}.`,
       testFailed: (message) => `Le webhook a échoué : ${message}`,
       testNoResponse: "Le webhook n'a pas répondu.",
       privacyTitle: 'Confidentialité',
       privacyCopy:
-        "Toute la configuration et l'historique des scans restent sur cet appareil dans le stockage local. Les valeurs des en-têtes ne sont jamais journalisées ni envoyées ailleurs que vers votre webhook configuré.",
+        "La configuration, l'historique et les localisations restent sur cet appareil. La localisation n'est pas envoyée aux webhooks. Les en-têtes sont uniquement envoyés à votre webhook configuré.",
       appVersion: (version) => `Version de l'application ${version}.`,
       languageLabel: 'Langue',
       languageHelper: "Choisissez la langue de l'interface.",
@@ -200,6 +251,19 @@ const translations: Record<Language, Translations> = {
       stop: 'Kamera stoppen',
       table: { value: 'Wert', format: 'Format', time: 'Zeit', status: 'Status' },
       statuses: { sent: 'Gesendet', pending: 'Ausstehend', failed: 'Fehlgeschlagen' },
+      feedback: {
+        ready: 'Bereit zum Scannen',
+        detected: 'Code erkannt',
+        sending: 'Wird gesendet…',
+        sent: (code) => `Gesendet${code ? ` · HTTP ${code}` : ''}`,
+        failed: (reason) => `Webhook fehlgeschlagen · ${reason}`,
+      },
+      locationStatuses: {
+        unavailable: 'Standort nicht verfügbar',
+        'permission-denied': 'Standortberechtigung verweigert',
+        timeout: 'Zeitüberschreitung bei der Standortabfrage',
+        unsupported: 'Standort wird auf diesem Gerät nicht unterstützt',
+      },
       empty: 'Heute noch keine Scans.',
       waitMessage: (ms) => `Bitte ${ms} ms warten, bevor erneut gescannt wird.`,
       clearConfirmTitle: 'Löschen bestätigen',
@@ -221,6 +285,9 @@ const translations: Record<Language, Translations> = {
       resetCancel: 'Einstellungen behalten',
       urlLabel: 'Webhook-URL',
       urlPlaceholder: 'https://beispiel.de/webhook',
+      webhookName: (number) => `Webhook ${number}`,
+      primaryFormatsLabel: 'Formate für Webhook 1',
+      primaryFormatsNote: 'Kommagetrennte ZXing-Formate (z. B. QR_CODE). Alle anderen Formate gehen an Webhook 2.',
       methodLabel: 'HTTP-Verb',
       methodNote: 'Bei GET werden nur Header gesendet, um Query-Strings zu schützen.',
       pauseLabel: 'Pause zwischen Scans',
@@ -236,13 +303,14 @@ const translations: Record<Language, Translations> = {
       testSend: 'Test senden',
       testSending: 'Test wird gesendet…',
       testMissingUrl: 'Konfigurieren Sie zuerst die Webhook-URL.',
+      testLocationUnavailable: 'Webhook kann nicht getestet werden: Standort nicht verfügbar.',
       testSendingStatus: 'Test-Payload wird gesendet…',
       testSuccess: (code) => `Webhook antwortete mit HTTP ${code ?? '200-299'}.`,
       testFailed: (message) => `Webhook fehlgeschlagen: ${message}`,
       testNoResponse: 'Webhook hat nicht geantwortet.',
       privacyTitle: 'Datenschutz',
       privacyCopy:
-        'Alle Einstellungen und der Scanverlauf bleiben lokal auf diesem Gerät. Header-Werte werden niemals protokolliert oder woandershin gesendet als zu Ihrem konfigurierten Webhook.',
+        'Einstellungen, Scanverlauf und Standortdaten bleiben lokal auf diesem Gerät. Standortdaten werden nicht an Webhooks gesendet. Header werden nur an den konfigurierten Webhook gesendet.',
       appVersion: (version) => `App-Version ${version}.`,
       languageLabel: 'Sprache',
       languageHelper: 'Sprache der Benutzeroberfläche festlegen.',
