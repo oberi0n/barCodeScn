@@ -115,7 +115,7 @@ export default function App() {
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const APP_VERSION = '0.3.5';
+  const APP_VERSION = '0.3.6';
   const scannerSectionRef = useRef<HTMLElement | null>(null);
   const t = useMemo(() => getTranslations(language), [language]);
   const addDebugLog = useCallback((message: string) => {
@@ -346,6 +346,56 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!scannerActive) return undefined;
+    setLocationAcquiring(true);
+    if (!('geolocation' in navigator)) {
+      locationStatusRef.current = 'unsupported';
+      setLocationStatus('unsupported');
+      setLocationAcquiring(false);
+      addDebugLog('Geolocation unsupported');
+      return undefined;
+    }
+
+    let active = true;
+    addDebugLog('Geolocation watch started');
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (!active) return;
+        latestLocationRef.current = locationFromPosition(position);
+        setCurrentLocation(latestLocationRef.current);
+        locationStatusRef.current = 'available';
+        setLocationStatus('available');
+        setLocationAcquiring(false);
+        addDebugLog(`Location acquired: lat=${position.coords.latitude.toFixed(6)} lon=${position.coords.longitude.toFixed(6)} accuracy=${Math.round(position.coords.accuracy)}m`);
+      },
+      (error) => {
+        if (!active) return;
+        const status = locationStatusFromError(error);
+        if (status === 'permission-denied') {
+          latestLocationRef.current = null;
+          setCurrentLocation(null);
+        }
+        locationStatusRef.current = status;
+        setLocationStatus(status);
+        setLocationAcquiring(false);
+        addDebugLog(`Geolocation ${status}`);
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
+    );
+
+    return () => {
+      active = false;
+      navigator.geolocation.clearWatch(watchId);
+      addDebugLog('Geolocation watch stopped');
+    };
+  }, [scannerActive, addDebugLog]);
+
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
+  useEffect(() => {
     const modalOpen = showResetConfirm || showClearConfirm;
     document.body.classList.toggle('modal-open', modalOpen);
     return () => document.body.classList.remove('modal-open');
@@ -361,21 +411,42 @@ export default function App() {
     }
   }, [scannerActive]);
 
-  const playConfirmation = () => {
+  const playToneSequence = (tones: Array<{ frequency: number; offset: number; duration: number }>) => {
     const context = audioContextRef.current;
-    if (context) {
-      void context.resume().then(() => {
+    if (!context) return;
+    void context.resume().then(() => {
+      tones.forEach(({ frequency, offset, duration }) => {
         const oscillator = context.createOscillator();
         const gain = context.createGain();
-        oscillator.frequency.value = 880;
-        gain.gain.setValueAtTime(0.05, context.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.09);
+        const startsAt = context.currentTime + offset;
+        oscillator.frequency.setValueAtTime(frequency, startsAt);
+        gain.gain.setValueAtTime(0.0001, startsAt);
+        gain.gain.exponentialRampToValueAtTime(0.075, startsAt + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startsAt + duration);
         oscillator.connect(gain).connect(context.destination);
-        oscillator.start();
-        oscillator.stop(context.currentTime + 0.1);
-      }).catch(() => undefined);
-    }
+        oscillator.start(startsAt);
+        oscillator.stop(startsAt + duration);
+      });
+    }).catch(() => undefined);
+  };
+
+  const playDetectionSound = () => {
+    playToneSequence([{ frequency: 760, offset: 0, duration: 0.09 }]);
     navigator.vibrate?.(80);
+  };
+
+  const playSuccessSound = () => {
+    playToneSequence([
+      { frequency: 660, offset: 0, duration: 0.07 },
+      { frequency: 880, offset: 0.1, duration: 0.09 },
+    ]);
+  };
+
+  const playErrorSound = () => {
+    playToneSequence([
+      { frequency: 480, offset: 0, duration: 0.1 },
+      { frequency: 300, offset: 0.12, duration: 0.14 },
+    ]);
   };
 
   const prepareAudio = () => {
@@ -436,7 +507,7 @@ export default function App() {
       format,
       detail: recentLocation ? t.scanner.feedback.sendingWebhook : t.scanner.feedback.waitingLocation,
     });
-    playConfirmation();
+    playDetectionSound();
     if (recentLocation) {
       const ageSeconds = Math.max(0, Math.round((Date.now() - (recentLocation.timestamp ?? Date.now())) / 1000));
       addDebugLog(`Using cached location: age=${ageSeconds}s`);
@@ -513,6 +584,8 @@ export default function App() {
         ),
       );
       sendingRef.current = false;
+      if (result.status === 'sent') playSuccessSound();
+      else playErrorSound();
       if (feedbackSequenceRef.current !== sequence) return;
       setScanFeedback({
         phase: result.status === 'sent' ? 'sent' : 'failed',
