@@ -179,6 +179,172 @@ export default function App() {
     return () => document.body.classList.remove('no-scroll');
   }, [scannerActive]);
 
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
+  useEffect(() => {
+    if (!scannerActive) return undefined;
+    if (!('geolocation' in navigator)) {
+      locationStatusRef.current = 'unsupported';
+      setLocationStatus('unsupported');
+      return undefined;
+    }
+
+    let active = true;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (!active) return;
+        latestLocationRef.current = locationFromPosition(position);
+        locationStatusRef.current = 'available';
+        setLocationStatus('available');
+      },
+      (error) => {
+        if (!active) return;
+        const status = locationStatusFromError(error);
+        if (status === 'permission-denied') latestLocationRef.current = null;
+        locationStatusRef.current = status;
+        setLocationStatus(status);
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
+    );
+
+    return () => {
+      active = false;
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [scannerActive]);
+
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
+  useEffect(() => {
+    if (!scannerActive) return undefined;
+    if (!('geolocation' in navigator)) {
+      locationStatusRef.current = 'unsupported';
+      setLocationStatus('unsupported');
+      return undefined;
+    }
+
+    let active = true;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (!active) return;
+        latestLocationRef.current = locationFromPosition(position);
+        locationStatusRef.current = 'available';
+        setLocationStatus('available');
+      },
+      (error) => {
+        if (!active) return;
+        const status = locationStatusFromError(error);
+        if (status === 'permission-denied') latestLocationRef.current = null;
+        locationStatusRef.current = status;
+        setLocationStatus(status);
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
+    );
+
+    return () => {
+      active = false;
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [scannerActive]);
+
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
+  useEffect(() => {
+    if (!scannerActive) return undefined;
+    if (!('geolocation' in navigator)) {
+      locationStatusRef.current = 'unsupported';
+      setLocationStatus('unsupported');
+      return undefined;
+    }
+
+    let active = true;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (!active) return;
+        latestLocationRef.current = locationFromPosition(position);
+        locationStatusRef.current = 'available';
+        setLocationStatus('available');
+      },
+      (error) => {
+        if (!active) return;
+        const status = locationStatusFromError(error);
+        if (status === 'permission-denied') latestLocationRef.current = null;
+        locationStatusRef.current = status;
+        setLocationStatus(status);
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
+    );
+
+    return () => {
+      active = false;
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [scannerActive]);
+
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
+  useEffect(() => {
+    if (!scannerActive) return undefined;
+    setLocationAcquiring(true);
+    if (!('geolocation' in navigator)) {
+      locationStatusRef.current = 'unsupported';
+      setLocationStatus('unsupported');
+      setLocationAcquiring(false);
+      addDebugLog('Geolocation unsupported');
+      return undefined;
+    }
+
+    let active = true;
+    addDebugLog('Geolocation watch started');
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (!active) return;
+        latestLocationRef.current = locationFromPosition(position);
+        setCurrentLocation(latestLocationRef.current);
+        locationStatusRef.current = 'available';
+        setLocationStatus('available');
+        setLocationAcquiring(false);
+        addDebugLog(`Location acquired: lat=${position.coords.latitude.toFixed(6)} lon=${position.coords.longitude.toFixed(6)} accuracy=${Math.round(position.coords.accuracy)}m`);
+      },
+      (error) => {
+        if (!active) return;
+        const status = locationStatusFromError(error);
+        if (status === 'permission-denied') {
+          latestLocationRef.current = null;
+          setCurrentLocation(null);
+        }
+        locationStatusRef.current = status;
+        setLocationStatus(status);
+        setLocationAcquiring(false);
+        addDebugLog(`Geolocation ${status}`);
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 },
+    );
+
+    return () => {
+      active = false;
+      navigator.geolocation.clearWatch(watchId);
+      addDebugLog('Geolocation watch stopped');
+    };
+  }, [scannerActive, addDebugLog]);
+
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
   useEffect(() => {
     if (!scannerActive) return undefined;
     setLocationAcquiring(true);
